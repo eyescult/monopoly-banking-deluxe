@@ -28,6 +28,7 @@ export default function GamePage() {
 
     /**
      * Sayfa yüklendiğinde oyun kanalına abone olur.
+     * Ekran kapanıp açıldığında bağlantıyı ve veriyi yeniler (Page Visibility API).
      * Sayfadan ayrıldığında kanaldan ayrılır.
      */
     useEffect(() => {
@@ -37,16 +38,35 @@ export default function GamePage() {
             subscribeToGame(gameId);
 
             // 5 saniye içinde oyun verisi gelmezse hata ver ve geri dön
-            const timeout = setTimeout(() => {
+            const timeout = setTimeout(async () => {
                 if (isMounted && !useGameStore.getState().currentGame) {
+                    // current_game_id'yi temizle (sonsuz döngüyü engelle)
+                    await useAuthStore.getState().setCurrentGameId(null);
                     toast.error('Oyun bulunamadı veya bağlantı hatası');
                     navigate('/');
                 }
             }, 5000);
 
+            /**
+             * Page Visibility API: Ekran kapanıp açıldığında
+             * realtime bağlantısını kontrol et ve veriyi yenile.
+             * Bu, telefon ekranı kapandığında WebSocket'in kopması sorununu çözer.
+             */
+            const handleVisibilityChange = () => {
+                if (document.visibilityState === 'visible') {
+                    console.log('[Visibility] Page became visible, reconnecting...');
+                    // Supabase bağlantısını ve veriyi yenile
+                    useGameStore.getState().reconnectChannel();
+                }
+            };
+
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+
             return () => {
                 clearTimeout(timeout);
                 isMounted = false;
+                // Visibility listener'ı temizle
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
                 // Sayfadan çıkarken oyunla ilgili tüm bildirimleri temizle
                 toast.dismiss();
                 cleanup();
@@ -93,6 +113,8 @@ export default function GamePage() {
         if (currentGame) {
             setGameLoaded(true);
         } else if (gameLoaded && !currentGame) {
+            // current_game_id'yi temizle (sonsuz döngüyü engelle)
+            useAuthStore.getState().setCurrentGameId(null);
             toast.error('Oyun kurucu tarafından sonlandırıldı', { id: 'game-ended-toast' });
             navigate('/');
         }
@@ -226,20 +248,50 @@ export default function GamePage() {
 
     /**
      * İşlem modalını açar veya hızlı maaş ödemesini yapar.
+     * Maaş işlemi için timeout mekanizması eklendi.
      */
-    const openTransactionModal = (type, targetId = null) => {
+    const openTransactionModal = async (type, targetId = null) => {
+        // İflas eden kullanıcı işlem yapamaz
+        const player = currentGame.players.find(p => p.user_id === user.id);
+        if (player?.bankrupt_timestamp) {
+            toast.error('İflas ettiğiniz için işlem yapamazsınız!', { id: 'bankrupt-error' });
+            return;
+        }
+
         if (type === 'fromSalary') {
             const loadingToast = toast.loading('Maaş yatırılıyor...');
-            makeTransaction({
-                gameId: currentGame.id,
-                type: 'fromSalary',
-                amount: currentGame.salary,
-                toUserId: user.id
-            }).then((res) => {
+
+            try {
+                // Timeout ile maaş işlemini gerçekleştir
+                const result = await Promise.race([
+                    makeTransaction({
+                        gameId: currentGame.id,
+                        type: 'fromSalary',
+                        amount: currentGame.salary,
+                        toUserId: user.id
+                    }),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+                    )
+                ]);
+
                 toast.dismiss(loadingToast);
-                if (res.success) toast.success('Maaş alındı!');
-                else toast.error(`Hata: ${res.error || 'İşlem başarısız'}`);
-            });
+                if (result.success) {
+                    toast.success('Maaş alındı!');
+                } else {
+                    toast.error(`Hata: ${result.error || 'İşlem başarısız'}`);
+                }
+            } catch (err) {
+                toast.dismiss(loadingToast);
+                if (err.message === 'TIMEOUT') {
+                    toast.error('İşlem zaman aşımına uğradı. Lütfen tekrar deneyin.', {
+                        id: 'salary-timeout',
+                        duration: 5000
+                    });
+                } else {
+                    toast.error(`Beklenmeyen hata: ${err.message}`);
+                }
+            }
             return;
         }
 
@@ -337,6 +389,7 @@ export default function GamePage() {
 
     const otherPlayers = currentGame.players.filter(p => p.user_id !== user.id);
     const currentPlayer = currentGame.players.find(p => p.user_id === user.id);
+    const isBankrupt = currentPlayer?.bankrupt_timestamp !== null;
 
     return (
         <div className="game-page">
@@ -379,11 +432,11 @@ export default function GamePage() {
                             <button
                                 className="action-item"
                                 onClick={() => openTransactionModal('toPlayer', player.user_id)}
-                                disabled={player.bankrupt_timestamp !== null}
+                                disabled={player.bankrupt_timestamp !== null || isBankrupt}
                                 style={{
                                     width: '100%',
                                     marginBottom: 0,
-                                    ...(player.bankrupt_timestamp ? { opacity: 0.5, cursor: 'not-allowed' } : {})
+                                    ...((player.bankrupt_timestamp || isBankrupt) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
                                 }}
                             >
                                 <div className="player-info">
@@ -433,14 +486,24 @@ export default function GamePage() {
                             )}
                         </div>
                     ))}
-                    <button className="action-item" onClick={() => openTransactionModal('toBank')}>
+                    <button
+                        className="action-item"
+                        onClick={() => openTransactionModal('toBank')}
+                        disabled={isBankrupt}
+                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    >
                         <div className="player-info">
                             <div className="player-avatar bank-avatar"><Building2 size={20} color="white" /></div>
                             <span className="player-name">Banka</span>
                         </div>
                     </button>
                     {currentGame.enable_free_parking && (
-                        <button className="action-item" onClick={() => openTransactionModal('toFreeParking')}>
+                        <button
+                            className="action-item"
+                            onClick={() => openTransactionModal('toFreeParking')}
+                            disabled={isBankrupt}
+                            style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        >
                             <div className="player-info">
                                 <div className="player-avatar parking-avatar"><Car size={20} color="white" /></div>
                                 <span className="player-name">Otopark</span>
@@ -456,16 +519,31 @@ export default function GamePage() {
                 </div>
 
                 <div className="grid-actions">
-                    <button className="grid-btn" onClick={() => openTransactionModal('fromBank')}>
+                    <button
+                        className="grid-btn"
+                        onClick={() => openTransactionModal('fromBank')}
+                        disabled={isBankrupt}
+                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    >
                         <Building2 size={24} />
                         <span>Banka</span>
                     </button>
-                    <button className="grid-btn" onClick={() => openTransactionModal('fromSalary')}>
+                    <button
+                        className="grid-btn"
+                        onClick={() => openTransactionModal('fromSalary')}
+                        disabled={isBankrupt}
+                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                    >
                         <Wallet size={24} />
                         <span>Maaş</span>
                     </button>
                     {currentGame.enable_free_parking && (
-                        <button className="grid-btn" onClick={() => openTransactionModal('fromFreeParking')}>
+                        <button
+                            className="grid-btn"
+                            onClick={() => openTransactionModal('fromFreeParking')}
+                            disabled={isBankrupt}
+                            style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        >
                             <Car size={24} />
                             <span>Otopark</span>
                         </button>

@@ -20,6 +20,7 @@ const MAX_PLAYERS = 6;
  */
 export const useGameStore = create((set, get) => ({
     currentGame: null,      // Aktif oyun verisi
+    currentGameId: null,    // Aktif oyun ID'si (reconnection için)
     games: [],              // (Kullanılmıyor olabilir, genel oyun listesi için)
     loading: false,          // İşlem yüklenme durumu
     realtimeChannel: null,  // Supabase realtime kanal referansı
@@ -185,6 +186,7 @@ export const useGameStore = create((set, get) => ({
 
     /**
      * Supabase Realtime ile oyun güncellemelerini canlı olarak dinler.
+     * Bağlantı durumunu izler ve gerektiğinde yeniden bağlanmayı tetikler.
      */
     subscribeToGame: (gameId) => {
         const currentChannel = get().realtimeChannel;
@@ -210,21 +212,75 @@ export const useGameStore = create((set, get) => ({
                     }
                 }
             )
-            .subscribe();
+            .subscribe((status) => {
+                // Bağlantı durumunu konsole yaz (debug amaçlı)
+                console.log(`[Realtime] Channel status: ${status}`);
 
-        set({ realtimeChannel: channel });
-
-        // İlk veriyi çek
-        supabase
-            .from('games')
-            .select('*')
-            .eq('id', gameId)
-            .single()
-            .then(({ data }) => {
-                if (data) {
-                    set({ currentGame: data });
+                if (status === 'SUBSCRIBED') {
+                    // Yeni abone olduğumuzda güncel veriyi çek
+                    get().refreshGameData(gameId);
+                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                    // Bağlantı hatası - yeniden dene
+                    console.warn('[Realtime] Connection error, will retry...');
                 }
             });
+
+        set({ realtimeChannel: channel, currentGameId: gameId });
+
+        // İlk veriyi çek
+        get().refreshGameData(gameId);
+    },
+
+    /**
+     * Oyun verisini Supabase'den taze olarak çeker.
+     * Visibility change veya reconnection durumlarında kullanılır.
+     */
+    refreshGameData: async (gameId) => {
+        const targetGameId = gameId || get().currentGameId;
+        if (!targetGameId) return;
+
+        try {
+            const { data, error } = await supabase
+                .from('games')
+                .select('*')
+                .eq('id', targetGameId)
+                .single();
+
+            if (!error && data) {
+                set({ currentGame: data });
+            }
+        } catch (err) {
+            console.error('[GameStore] Failed to refresh game data:', err);
+        }
+    },
+
+    /**
+     * Realtime kanalını yeniden bağlar.
+     * Ekran açıldığında veya bağlantı koptuğunda çağrılır.
+     */
+    reconnectChannel: () => {
+        const gameId = get().currentGameId;
+        const channel = get().realtimeChannel;
+
+        if (!gameId) return;
+
+        // Kanal durumunu kontrol et
+        if (channel) {
+            const state = channel.state;
+            console.log(`[Realtime] Current channel state: ${state}`);
+
+            // Eğer kanal aktif değilse yeniden abone ol
+            if (state !== 'joined') {
+                console.log('[Realtime] Reconnecting to channel...');
+                get().subscribeToGame(gameId);
+            } else {
+                // Kanal aktif, sadece veriyi yenile
+                get().refreshGameData(gameId);
+            }
+        } else {
+            // Kanal yok, yeniden oluştur
+            get().subscribeToGame(gameId);
+        }
     },
 
     /**
@@ -308,6 +364,21 @@ export const useGameStore = create((set, get) => ({
 
             if (fetchError || !game) {
                 throw new Error('Oyun bulunamadı');
+            }
+
+            // İflas kontrolü: İflas eden kullanıcı işlem yapamaz
+            if (fromUserId) {
+                const fromPlayer = game.players.find(p => p.user_id === fromUserId);
+                if (fromPlayer?.bankrupt_timestamp) {
+                    throw new Error('İflas eden oyuncu para gönderemez');
+                }
+            }
+
+            if (toUserId) {
+                const toPlayer = game.players.find(p => p.user_id === toUserId);
+                if (toPlayer?.bankrupt_timestamp) {
+                    throw new Error('İflas eden oyuncuya para gönderilemez');
+                }
             }
 
             const timestamp = new Date().toISOString();
@@ -469,6 +540,12 @@ export const useGameStore = create((set, get) => ({
                 if (updateError) throw updateError;
             }
 
+            // Atılan oyuncunun current_game_id'sini temizle (sonsuz döngüyü engelle)
+            await supabase
+                .from('users')
+                .update({ current_game_id: null })
+                .eq('id', targetUserId);
+
             return { success: true };
         } catch (error) {
             console.error('Kick player error:', error);
@@ -481,6 +558,16 @@ export const useGameStore = create((set, get) => ({
      */
     disbandGame: async (gameId) => {
         try {
+            // Önce oyundaki tüm oyuncuların current_game_id'lerini temizle (sonsuz döngüyü engelle)
+            const currentGame = get().currentGame;
+            if (currentGame?.players) {
+                const playerIds = currentGame.players.map(p => p.user_id);
+                await supabase
+                    .from('users')
+                    .update({ current_game_id: null })
+                    .in('id', playerIds);
+            }
+
             const { error } = await supabase
                 .from('games')
                 .delete()
@@ -506,7 +593,7 @@ export const useGameStore = create((set, get) => ({
         if (channel) {
             supabase.removeChannel(channel);
         }
-        set({ currentGame: null, realtimeChannel: null });
+        set({ currentGame: null, currentGameId: null, realtimeChannel: null });
     },
 
     /**

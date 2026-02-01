@@ -54,6 +54,7 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
 
     /**
      * Form gönderildiğinde transfer işlemini tetikler.
+     * Timeout ve retry mekanizması ile güvenilirlik artırıldı.
      */
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -93,8 +94,36 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
             toUserId: toUserId
         };
 
+        /**
+         * Timeout ile sarmalanmış işlem fonksiyonu.
+         * Ekran kapandığında işlem askıda kalabilir, bu yüzden timeout ekliyoruz.
+         */
+        const executeWithTimeout = async (retryCount = 0) => {
+            const MAX_RETRIES = 1;
+            const TIMEOUT_MS = 15000; // 15 saniye timeout
+
+            try {
+                // Promise.race ile timeout uygula
+                const result = await Promise.race([
+                    makeTransaction(txData),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('TIMEOUT')), TIMEOUT_MS)
+                    )
+                ]);
+
+                return result;
+            } catch (err) {
+                // Timeout durumunda retry dene
+                if (err.message === 'TIMEOUT' && retryCount < MAX_RETRIES) {
+                    console.warn(`[Transaction] Timeout, retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+                    return executeWithTimeout(retryCount + 1);
+                }
+                throw err;
+            }
+        };
+
         try {
-            const result = await makeTransaction(txData);
+            const result = await executeWithTimeout();
             setLoading(false);
             toast.dismiss(loadingToast);
 
@@ -107,7 +136,15 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
         } catch (err) {
             setLoading(false);
             toast.dismiss(loadingToast);
-            toast.error(`Beklenmeyen hata: ${err.message}`);
+
+            if (err.message === 'TIMEOUT') {
+                toast.error('İşlem zaman aşımına uğradı. Lütfen tekrar deneyin.', {
+                    id: 'tx-timeout',
+                    duration: 5000
+                });
+            } else {
+                toast.error(`Beklenmeyen hata: ${err.message}`);
+            }
         }
     };
 
@@ -213,19 +250,31 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                                 />
                             </div>
 
-                            {/* Hızlı Miktar Butonları */}
+                            {/* Hızlı Miktar Butonları - Monopoly Para Birimleri */}
                             <div className="quick-amount-grid">
-                                {[10, 20, 50, 100, 200, 500].map((val) => (
+                                {[1, 5, 10, 20, 50, 100, 200, 500].map((val) => (
                                     <button
                                         key={val}
                                         type="button"
-                                        className="btn btn-outline btn-small"
-                                        onClick={() => setAmount(val.toString())}
+                                        className="btn btn-outline btn-small money-btn"
+                                        onClick={() => setAmount(prev => {
+                                            const currentVal = parseInt(prev, 10) || 0;
+                                            return (currentVal + val).toString();
+                                        })}
                                     >
-                                        ${val}
+                                        +${val}
                                     </button>
                                 ))}
                             </div>
+                            {/* Sıfırlama Butonu */}
+                            <button
+                                type="button"
+                                className="btn btn-ghost btn-small"
+                                onClick={() => setAmount('')}
+                                style={{ marginTop: '0.5rem', width: '100%' }}
+                            >
+                                Sıfırla
+                            </button>
                         </div>
                     )}
 
