@@ -68,10 +68,14 @@ const LandingPage = () => {
                     ? "Monopoly oyunlarınızı dijitalleştirin! Kağıt paraları unutun, hızlı ve güvenli para transferi ile oyun keyfini katlayın. Ücretsiz hemen başlayın."
                     : "Digitize your Monopoly games! Forget paper money, enjoy fast and secure money transfers. Start for free now."}
                 />
-                <link rel="canonical" href={`https://monopoly-app.com${location.pathname === '/' ? '' : location.pathname}`} />
+                <link rel="canonical" href={`https://monopoly-digital-banking.vercel.app${location.pathname}`} />
+                <link rel="alternate" hrefLang="tr" href="https://monopoly-digital-banking.vercel.app/tr" />
+                <link rel="alternate" hrefLang="en" href="https://monopoly-digital-banking.vercel.app/en" />
+                <link rel="alternate" hrefLang="x-default" href="https://monopoly-digital-banking.vercel.app/" />
                 <meta property="og:title" content={isTurkish ? 'Monopoly Dijital Bankacılık' : 'Monopoly Digital Banking'} />
                 <meta property="og:description" content={isTurkish ? 'Arkadaşlarınızla Monopoly oynarken parayı dijital yönetin.' : 'Manage money digitally while playing Monopoly with friends.'} />
                 <meta property="og:type" content="website" />
+                <meta property="og:url" content={`https://monopoly-digital-banking.vercel.app${location.pathname}`} />
                 <meta name="robots" content="index, follow" />
                 <meta name="google-site-verification" content="Fer3arlmkb0QuXaZJeA9gWnEz7XtsjSraMlQEBF8D8g" />
                 <html lang={currentLang} />

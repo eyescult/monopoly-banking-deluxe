@@ -8,4 +8,4 @@ Disallow: /login
 Disallow: /set-username
 
 # Host
-Host: https://monopoly-app.com
+Host: https://monopoly-digital-banking.vercel.app/
