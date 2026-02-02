@@ -1,11 +1,14 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function AboutModal({ onClose }) {
+    const { t } = useTranslation();
+
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content about-modal" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 className="modal-title">Uygulama Hakkında</h2>
+                    <h2 className="modal-title">{t('about_title')}</h2>
                     <button onClick={onClose} className="btn btn-small btn-ghost">
                         <X size={24} />
                     </button>
@@ -14,68 +17,66 @@ export default function AboutModal({ onClose }) {
                 <div className="about-content">
                     <div className="about-hero">
                         <h1 className="about-app-title">Monopoly Digital Bank</h1>
-                        <div className="about-version">Versiyon 1.2.1</div>
+                        <div className="about-version">{t('version')} 1.2.1</div>
                     </div>
 
                     <div className="about-developer">
-                        <p className="about-made-by">Geliştirici</p>
+                        <p className="about-made-by">{t('developer')}</p>
                         <p className="about-developer-name">Gökhan Ton</p>
                     </div>
 
                     <div className="about-section">
                         <p className="about-description">
-                            Monopoly masa oyunları için modern, web tabanlı dijital bankacılık uygulaması.
+                            {t('about_desc_1')}
                         </p>
                         <p className="about-description">
-                            Kağıt paraları unutun! Her oyuncu tarayıcısından bakiyesini görebilir ve
-                            gerçek zamanlı olarak diğer oyunculara veya bankaya para transferi yapabilir.
+                            {t('about_desc_2')}
                         </p>
                     </div>
 
                     <div className="about-section">
-                        <h3 className="about-subtitle">Nasıl Kullanılır:</h3>
+                        <h3 className="about-subtitle">{t('how_to_use')}</h3>
                         <ol className="about-list">
-                            <li>Bir oyuncu web sitesinden yeni oyun oluşturur</li>
-                            <li>Diğer oyuncular telefonlarından siteye girer</li>
-                            <li>Oyun kodunu girerek aynı oyuna katılırlar</li>
-                            <li>Artık tüm işlemler dijital ortamda yapılır</li>
-                            <li>Keyifli oyunlar! 🎲</li>
+                            <li>{t('step_1')}</li>
+                            <li>{t('step_2')}</li>
+                            <li>{t('step_3')}</li>
+                            <li>{t('step_4')}</li>
+                            <li>{t('step_5')}</li>
                         </ol>
                     </div>
 
                     <div className="about-section">
-                        <h3 className="about-subtitle">Özellikler:</h3>
+                        <h3 className="about-subtitle">{t('features')}</h3>
                         <ul className="about-list">
-                            <li>💰 Başlangıç sermayesi ve maaş ayarları</li>
-                            <li>💸 Oyuncular arası para transferi</li>
-                            <li>🏦 Bankadan para çekme ve yatırma</li>
-                            <li>🅿️ Ücretsiz otopark havuzu</li>
-                            <li>📊 Detaylı işlem geçmişi</li>
-                            <li>💔 Otomatik iflas kontrolü</li>
-                            <li>🏆 Oyun sonu istatistikleri</li>
-                            <li>⏱️ Oyun süresi takibi</li>
-                            <li>🚫 Oyunu dağıtma/sonlandırma özelliği</li>
+                            <li>{t('feature_1')}</li>
+                            <li>{t('feature_2')}</li>
+                            <li>{t('feature_3')}</li>
+                            <li>{t('feature_4')}</li>
+                            <li>{t('feature_5')}</li>
+                            <li>{t('feature_6')}</li>
+                            <li>{t('feature_7')}</li>
+                            <li>{t('feature_8')}</li>
+                            <li>{t('feature_9')}</li>
                         </ul>
                     </div>
 
                     <div className="about-section">
-                        <h3 className="about-subtitle">Neden Monopoly Digital Bank?</h3>
+                        <h3 className="about-subtitle">{t('why_monopoly_bank')}</h3>
                         <ul className="about-list">
-                            <li>Kağıt paraları kaybetme ve karıştırma derdi yok</li>
-                            <li>Hızlı ve hatasız para transferleri</li>
-                            <li>Tüm işlemler otomatik kaydedilir</li>
-                            <li>Oyun sonunda detaylı istatistikler</li>
-                            <li>Oyun akışı kesintisiz devam eder</li>
+                            <li>{t('reason_1')}</li>
+                            <li>{t('reason_2')}</li>
+                            <li>{t('reason_3')}</li>
+                            <li>{t('reason_4')}</li>
+                            <li>{t('reason_5')}</li>
                         </ul>
                     </div>
 
                     <div className="about-footer">
                         <p className="about-note">
-                            💡 İPUCU: Oyun sırasında her oyuncunun telefonunu açık tutması önerilir.
-                            Böylece bakiyenizi ve işlemleri gerçek zamanlı takip edebilirsiniz.
+                            {t('tip')}
                         </p>
                         <div className="about-credits">
-                            <p className="about-year">© 2025 • Monopoly Digital Bank</p>
+                            <p className="about-year">{t('copyright')}</p>
                         </div>
                     </div>
                 </div>
@@ -83,3 +84,4 @@ export default function AboutModal({ onClose }) {
         </div>
     );
 }
+

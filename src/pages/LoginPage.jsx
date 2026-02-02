@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { LogIn, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { LogIn, Mail, Lock, User as UserIcon, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 import logo from '../assets/logo.svg';
 import logoDark from '../assets/logo-dark.svg';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Giriş ve Kayıt sayfası.
@@ -25,6 +26,7 @@ export default function LoginPage() {
     const { signInAnonymously, signInWithEmail, signUpWithEmail } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
+    const { t, i18n } = useTranslation();
 
     // Giriş yapıldıktan sonra yönlendirilecek sayfa (varsayılan: ana sayfa)
     const from = location.state?.from?.pathname || '/';
@@ -41,7 +43,7 @@ export default function LoginPage() {
             await new Promise(resolve => setTimeout(resolve, 100));
             navigate('/set-username', { state: { from: location.state?.from } });
         } else {
-            toast.error(result.error || 'Giriş yapılamadı');
+            toast.error(result.error || t('login_error'));
         }
 
         setLoading(false);
@@ -55,17 +57,17 @@ export default function LoginPage() {
 
         // Validasyonlar
         if (!email || !password) {
-            toast.error('Lütfen tüm alanları doldurun', { id: 'login-missing-fields' });
+            toast.error(t('fill_all_fields'), { id: 'login-missing-fields' });
             return;
         }
 
         if (isSignUp && (!firstName || !lastName)) {
-            toast.error('Lütfen ad ve soyad girin');
+            toast.error(t('enter_name_surname'));
             return;
         }
 
         if (password.length < 6) {
-            toast.error('Şifre en az 6 karakter olmalıdır');
+            toast.error(t('password_min_length'));
             return;
         }
 
@@ -78,7 +80,7 @@ export default function LoginPage() {
             setLoading(false);
 
             if (result.success) {
-                toast.success('Kayıt başarılı! Email adresinizi kontrol edin.', { id: 'signup-success' });
+                toast.success(t('signup_success'), { id: 'signup-success' });
                 setIsSignUp(false);
                 // Formu temizle
                 setEmail('');
@@ -86,7 +88,7 @@ export default function LoginPage() {
                 setFirstName('');
                 setLastName('');
             } else {
-                toast.error(result.error || 'Kayıt olunamadı');
+                toast.error(result.error || t('signup_error'));
             }
         } else {
             // Giriş yapma işlemi
@@ -96,13 +98,33 @@ export default function LoginPage() {
             if (result.success) {
                 navigate(from);
             } else {
-                toast.error(result.error || 'Giriş yapılamadı', { id: 'login-error' });
+                toast.error(result.error || t('login_error'), { id: 'login-error' });
             }
         }
     };
 
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+    };
+
     return (
         <div className="login-page">
+            <div className="language-switcher" style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
+                <button
+                    className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => changeLanguage('tr')}
+                    style={{ marginRight: '8px' }}
+                >
+                    TR
+                </button>
+                <button
+                    className={`btn btn-small ${i18n.language === 'en' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => changeLanguage('en')}
+                >
+                    EN
+                </button>
+            </div>
+
             <div className="login-container fade-in">
                 <div className="login-logo">
                     <img src={logo} alt="Monopoly Digital Bank" className="app-logo light-mode-logo" />
@@ -110,7 +132,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="login-subtitle">
-                    {isSignUp ? 'Hesap oluştur ve harcamalarını yönet' : 'Monopoly oyununda dijital bankacılık deneyimi'}
+                    {isSignUp ? t('login_subtitle_signup') : t('login_subtitle_login')}
                 </p>
 
                 <form onSubmit={handleEmailAuth} className="login-buttons">
@@ -123,7 +145,7 @@ export default function LoginPage() {
                                     <input
                                         type="text"
                                         className="form-input"
-                                        placeholder="Ad"
+                                        placeholder={t('first_name')}
                                         value={firstName}
                                         onChange={(e) => setFirstName(e.target.value)}
                                         disabled={loading}
@@ -136,7 +158,7 @@ export default function LoginPage() {
                                     <input
                                         type="text"
                                         className="form-input"
-                                        placeholder="Soyad"
+                                        placeholder={t('last_name')}
                                         value={lastName}
                                         onChange={(e) => setLastName(e.target.value)}
                                         disabled={loading}
@@ -153,7 +175,7 @@ export default function LoginPage() {
                             <input
                                 type="email"
                                 className="form-input"
-                                placeholder="Email"
+                                placeholder={t('email')}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 disabled={loading}
@@ -167,7 +189,7 @@ export default function LoginPage() {
                             <input
                                 type="password"
                                 className="form-input"
-                                placeholder="Şifre (min. 6 karakter)"
+                                placeholder={t('password')}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 disabled={loading}
@@ -185,7 +207,7 @@ export default function LoginPage() {
                         ) : (
                             <>
                                 <Mail size={20} />
-                                {isSignUp ? 'Kayıt Ol' : 'Giriş Yap'}
+                                {isSignUp ? t('register') : t('login')}
                             </>
                         )}
                     </button>
@@ -203,11 +225,11 @@ export default function LoginPage() {
                         }}
                         disabled={loading}
                     >
-                        {isSignUp ? 'Zaten hesabın var mı? Giriş yap' : 'Hesabın yok mu? Kayıt ol'}
+                        {isSignUp ? t('have_account') : t('no_account')}
                     </button>
 
                     <div className="divider">
-                        <span>veya</span>
+                        <span>{t('or')}</span>
                     </div>
 
                     {/* Misafir Girişi */}
@@ -218,18 +240,19 @@ export default function LoginPage() {
                         disabled={loading}
                     >
                         <LogIn size={20} />
-                        Misafir Olarak Devam Et
+                        {t('continue_as_guest')}
                     </button>
                 </form>
 
                 <div className="login-footer">
                     {isSignUp ? (
-                        <p>📧 Kayıt olduktan sonra email adresinize onay linki gönderilecektir</p>
+                        <p>{t('email_verification_note')}</p>
                     ) : (
-                        <p>⚠️ Misafir girişte istatistikleriniz sadece bu cihazda saklanır</p>
+                        <p>{t('guest_warning')}</p>
                     )}
                 </div>
             </div>
         </div>
     );
 }
+

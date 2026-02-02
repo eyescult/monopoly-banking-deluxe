@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
-import { Plus, LogIn as LoginIcon, LogOut, User, Trophy, Clock, Gamepad2, Users, Menu, X, Info, Edit3 } from 'lucide-react';
+import { Plus, LogIn as LoginIcon, LogOut, User, Trophy, Clock, Gamepad2, Users, Menu, X, Info, Edit3, Globe } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CreateGameModal from '../components/CreateGameModal';
 import JoinGameModal from '../components/JoinGameModal';
@@ -10,6 +10,7 @@ import AboutModal from '../components/AboutModal';
 import Avatar from '../components/Avatar';
 import logo from '../assets/logo.svg';
 import logoDark from '../assets/logo-dark.svg';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Uygulamanın ana sayfa bileşeni.
@@ -20,6 +21,7 @@ export default function HomePage() {
     const { user, signOut } = useAuthStore();
     const { getRecentGames, getUserStats } = useGameStore();
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
 
     // UI state yönetimi
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -86,7 +88,7 @@ export default function HomePage() {
         if (result.success) {
             navigate('/login');
         } else {
-            toast.error('Çıkış yapılamadı', { id: 'signout-error' });
+            toast.error(t('signout_error'), { id: 'signout-error' });
         }
     };
 
@@ -101,7 +103,7 @@ export default function HomePage() {
         if (result.success) {
             navigate('/login');
         } else {
-            toast.error('Çıkış yapılamadı', { id: 'signout-error' });
+            toast.error(t('signout_error'), { id: 'signout-error' });
         }
     };
 
@@ -115,11 +117,15 @@ export default function HomePage() {
         setShowAboutModal(true);
     };
 
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+    };
+
     /**
      * Oyun süresini okunabilir formata çevirir.
      */
     const formatDuration = (startTime, endTime) => {
-        if (!startTime || !endTime) return '0dk';
+        if (!startTime || !endTime) return `0${t('minutes_short')}`;
 
         const start = new Date(startTime);
         const end = new Date(endTime);
@@ -129,9 +135,9 @@ export default function HomePage() {
         const minutes = Math.floor((diffMs % 3600000) / 60000);
 
         if (hours > 0) {
-            return `${hours}sa ${minutes}dk`;
+            return `${hours}${t('hours')} ${minutes}${t('minutes')}`;
         }
-        return `${minutes}dk`;
+        return `${minutes}${t('minutes')}`;
     };
 
     /**
@@ -142,9 +148,9 @@ export default function HomePage() {
         const minutes = Math.floor((ms % 3600000) / 60000);
 
         if (hours > 0) {
-            return `${hours}sa ${minutes}dk`;
+            return `${hours}${t('hours')} ${minutes}${t('minutes')}`;
         }
-        return `${minutes}dk`;
+        return `${minutes}${t('minutes')}`;
     };
 
     return (
@@ -174,18 +180,41 @@ export default function HomePage() {
                 <nav className="sidebar-nav">
                     <button className="sidebar-item" onClick={handleChangeUsername}>
                         <Edit3 size={20} />
-                        <span>Adımı Değiştir</span>
+                        <span>{t('change_name')}</span>
                     </button>
                     <button className="sidebar-item" onClick={handleAbout}>
                         <Info size={20} />
-                        <span>Uygulama Hakkında</span>
+                        <span>{t('about_app')}</span>
                     </button>
+
+                    <div className="sidebar-item-group">
+                        <div className="sidebar-item-header">
+                            <Globe size={20} />
+                            <span>{t('language')}</span>
+                        </div>
+                        <div className="language-options" style={{ paddingLeft: '44px', display: 'flex', gap: '8px', marginTop: '8px' }}>
+                            <button
+                                className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-outline'}`}
+                                onClick={() => changeLanguage('tr')}
+                                style={{ flex: 1 }}
+                            >
+                                {t('turkish')}
+                            </button>
+                            <button
+                                className={`btn btn-small ${i18n.language === 'en' ? 'btn-primary' : 'btn-outline'}`}
+                                onClick={() => changeLanguage('en')}
+                                style={{ flex: 1 }}
+                            >
+                                {t('english')}
+                            </button>
+                        </div>
+                    </div>
                 </nav>
 
                 <div className="sidebar-footer">
                     <button className="sidebar-item danger" onClick={handleSignOut}>
                         <LogOut size={20} />
-                        <span>Çıkış Yap</span>
+                        <span>{t('sign_out')}</span>
                     </button>
                 </div>
             </div>
@@ -214,8 +243,8 @@ export default function HomePage() {
 
                     {/* Hoşgeldiniz Bölümü */}
                     <div className="welcome-section">
-                        <h2 className="welcome-title">Merhaba, {user?.name}! 👋</h2>
-                        <p className="welcome-subtitle">Yeni bir oyun başlatın veya mevcut bir oyuna katılın</p>
+                        <h2 className="welcome-title">{t('welcome_back', { name: user?.name })}</h2>
+                        <p className="welcome-subtitle">{t('welcome_subtitle')}</p>
                     </div>
 
                     {/* İstatistik Kartları */}
@@ -226,7 +255,7 @@ export default function HomePage() {
                             </div>
                             <div className="stat-content">
                                 <div className="stat-value">{stats.totalGames}</div>
-                                <div className="stat-label">Oynanan Oyun</div>
+                                <div className="stat-label">{t('total_games')}</div>
                             </div>
                         </div>
 
@@ -236,7 +265,7 @@ export default function HomePage() {
                             </div>
                             <div className="stat-content">
                                 <div className="stat-value">{stats.wonGames}</div>
-                                <div className="stat-label">Kazanılan Oyun</div>
+                                <div className="stat-label">{t('won_games')}</div>
                             </div>
                         </div>
 
@@ -246,7 +275,7 @@ export default function HomePage() {
                             </div>
                             <div className="stat-content">
                                 <div className="stat-value">{formatTotalDuration(stats.totalPlayTime)}</div>
-                                <div className="stat-label">Toplam Süre</div>
+                                <div className="stat-label">{t('total_time')}</div>
                             </div>
                         </div>
                     </div>
@@ -259,8 +288,8 @@ export default function HomePage() {
                         >
                             <Plus size={24} />
                             <div className="action-content">
-                                <div className="action-title">Oyun Kur</div>
-                                <div className="action-subtitle">Yeni bir oyun oluştur</div>
+                                <div className="action-title">{t('create_game')}</div>
+                                <div className="action-subtitle">{t('create_game_subtitle')}</div>
                             </div>
                         </button>
 
@@ -270,8 +299,8 @@ export default function HomePage() {
                         >
                             <LoginIcon size={24} />
                             <div className="action-content">
-                                <div className="action-title">Oyuna Katıl</div>
-                                <div className="action-subtitle">Mevcut oyuna katıl</div>
+                                <div className="action-title">{t('join_game')}</div>
+                                <div className="action-subtitle">{t('join_game_subtitle')}</div>
                             </div>
                         </button>
                     </div>
@@ -279,7 +308,7 @@ export default function HomePage() {
                     {/* Son Oyunlar Listesi */}
                     {recentGames && recentGames.length > 0 && (
                         <div className="recent-games">
-                            <h2 className="section-title">Son Oyunlar</h2>
+                            <h2 className="section-title">{t('recent_games')}</h2>
                             <div className="games-list">
                                 {recentGames.map((game) => {
                                     const winner = game.players.find(p => p.user_id === game.winner_id);
@@ -294,17 +323,17 @@ export default function HomePage() {
                                             </div>
                                             <div className="game-card-body">
                                                 <div className="game-stat">
-                                                    <span className="game-stat-label">Kazanan:</span>
-                                                    <span className="game-stat-value">{winner?.name || 'Bilinmiyor'}</span>
+                                                    <span className="game-stat-label">{t('winner')}:</span>
+                                                    <span className="game-stat-value">{winner?.name || t('unknown')}</span>
                                                 </div>
                                                 <div className="game-stat">
-                                                    <span className="game-stat-label">Oyuncular:</span>
+                                                    <span className="game-stat-label">{t('players')}:</span>
                                                     <span className="game-stat-value" style={{ fontSize: '0.75rem' }}>
                                                         {playerNames}
                                                     </span>
                                                 </div>
                                                 <div className="game-stat">
-                                                    <span className="game-stat-label">Süre:</span>
+                                                    <span className="game-stat-label">{t('duration')}:</span>
                                                     <span className="game-stat-value">{duration}</span>
                                                 </div>
                                             </div>
@@ -334,18 +363,18 @@ export default function HomePage() {
                 <div className="modal-overlay" onClick={() => setShowSignOutConfirm(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <h2 className="modal-title">Emin misiniz?</h2>
+                            <h2 className="modal-title">{t('signout_confirm_title')}</h2>
                         </div>
 
                         <div className="modal-body">
                             <p style={{ marginBottom: '1rem', lineHeight: '1.6' }}>
-                                Şu anda misafir hesabıyla giriş yaptınız. Çıkış yaptığınızda hesabınız ve tüm oyun geçmişiniz kalıcı olarak silinecektir.
+                                {t('signout_confirm_text1')}
                             </p>
                             <p style={{ marginBottom: '1rem', lineHeight: '1.6' }}>
-                                Sadece kullanıcı adınızı değiştirmek istiyorsanız, ana ekrandan "Adımı Değiştir" seçeneğini kullanabilirsiniz.
+                                {t('signout_confirm_text2')}
                             </p>
                             <p style={{ lineHeight: '1.6', color: 'var(--text-secondary)' }}>
-                                💡 İstatistiklerinizi korumak için email ile kayıt olmanızı öneririz. Böylece farklı cihazlardan da hesabınıza erişebilirsiniz.
+                                {t('signout_confirm_text3')}
                             </p>
                         </div>
 
@@ -354,13 +383,13 @@ export default function HomePage() {
                                 className="btn btn-ghost"
                                 onClick={() => setShowSignOutConfirm(false)}
                             >
-                                Vazgeç
+                                {t('cancel')}
                             </button>
                             <button
                                 className="btn btn-danger"
                                 onClick={confirmSignOut}
                             >
-                                Çıkış Yap
+                                {t('sign_out')}
                             </button>
                         </div>
                     </div>
@@ -369,3 +398,4 @@ export default function HomePage() {
         </div>
     );
 }
+

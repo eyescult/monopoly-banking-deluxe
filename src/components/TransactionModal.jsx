@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { X, DollarSign, Users, Building2, Car, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Para transferi işlemlerini yöneten modal bileşeni.
@@ -9,6 +10,7 @@ import toast from 'react-hot-toast';
  */
 export default function TransactionModal({ game, currentPlayer, onClose, initialConfig }) {
     const { makeTransaction } = useGameStore();
+    const { t } = useTranslation();
 
     // State yönetimi
     // Initialize state directly from props to avoid synchronous setState in effect
@@ -25,19 +27,19 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
     /**
      * Modal başlığını dinamik olarak belirler.
      */
-    let modalTitle = 'Para Transferi';
+    let modalTitle = t('transfer_title');
     if (initialConfig) {
         if (transactionType === 'toPlayer') {
             const targetPlayer = game.players.find(p => p.user_id === selectedPlayer);
-            modalTitle = targetPlayer ? `${targetPlayer.name} Kişisine Öde` : 'Oyuncuya Öde';
+            modalTitle = targetPlayer ? t('pay_to', { name: targetPlayer.name }) : t('pay_to_player');
         } else if (transactionType === 'toBank') {
-            modalTitle = 'Bankaya Öde';
+            modalTitle = t('pay_to_bank');
         } else if (transactionType === 'fromBank') {
-            modalTitle = 'Bankadan Çek';
+            modalTitle = t('withdraw_from_bank');
         } else if (transactionType === 'toFreeParking') {
-            modalTitle = 'Otoparka Öde';
+            modalTitle = t('pay_to_parking');
         } else if (transactionType === 'fromFreeParking') {
-            modalTitle = 'Otoparktan Al';
+            modalTitle = t('take_from_parking');
         }
     }
 
@@ -53,22 +55,22 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
 
         // Form validasyonları
         if (isNaN(amountNum) || amountNum <= 0) {
-            toast.error('Geçerli bir miktar girin', { id: 'tx-invalid-amount' });
+            toast.error(t('invalid_amount'), { id: 'tx-invalid-amount' });
             return;
         }
 
         if ((transactionType === 'toBank' || transactionType === 'toPlayer' || transactionType === 'toFreeParking') && amountNum > currentPlayer.balance) {
-            toast.error('Yetersiz bakiye', { id: 'tx-insufficient-funds' });
+            toast.error(t('insufficient_funds'), { id: 'tx-insufficient-funds' });
             return;
         }
 
         if (transactionType === 'toPlayer' && !selectedPlayer) {
-            toast.error('Lütfen bir oyuncu seçin');
+            toast.error(t('select_player_warning'));
             return;
         }
 
         setLoading(true);
-        const loadingToast = toast.loading('İşlem yapılıyor...');
+        const loadingToast = toast.loading(t('processing_tx'));
 
         // Alıcı ID belirleme
         const toUserId = transactionType === 'toPlayer' ? selectedPlayer :
@@ -117,27 +119,27 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
             toast.dismiss(loadingToast);
 
             if (result.success) {
-                toast.success('İşlem başarılı!', { id: 'tx-success' });
+                toast.success(t('transaction_success'), { id: 'tx-success' });
                 onClose();
             } else {
-                toast.error(`Hata: ${result.error || 'Bilinmeyen hata'}`);
+                toast.error(`${t('error')}: ${result.error || t('unknown_error')}`);
             }
         } catch (err) {
             setLoading(false);
             toast.dismiss(loadingToast);
 
             if (err.message === 'TIMEOUT') {
-                toast.error('İşlem zaman aşımına uğradı. Lütfen tekrar deneyin.', {
+                toast.error(t('tx_timeout'), {
                     id: 'tx-timeout',
                     duration: 5000
                 });
             } else if (err.message === 'QUEUE_TIMEOUT') {
-                toast.error('İşlem çok uzun süre bekledi. Lütfen tekrar deneyin.', {
+                toast.error(t('tx_queue_timeout'), {
                     id: 'tx-queue-timeout',
                     duration: 5000
                 });
             } else {
-                toast.error(`Beklenmeyen hata: ${err.message}`);
+                toast.error(t('unexpected_error', { message: err.message }));
             }
         }
     };
@@ -146,16 +148,16 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
 
     // İşlem tipleri ve ikonları
     const transactionTypes = [
-        { value: 'fromBank', label: 'Bankadan Al', icon: Building2, color: 'var(--success)' },
-        { value: 'toBank', label: 'Bankaya Öde', icon: Building2, color: 'var(--danger)' },
-        { value: 'toPlayer', label: 'Oyuncuya Öde', icon: Users, color: 'var(--info)' },
-        { value: 'fromSalary', label: 'Maaş Al', icon: Wallet, color: 'var(--warning)' },
+        { value: 'fromBank', label: t('withdraw_from_bank'), icon: Building2, color: 'var(--success)' },
+        { value: 'toBank', label: t('pay_to_bank'), icon: Building2, color: 'var(--danger)' },
+        { value: 'toPlayer', label: t('pay_to_player'), icon: Users, color: 'var(--info)' },
+        { value: 'fromSalary', label: t('salary_action'), icon: Wallet, color: 'var(--warning)' },
     ];
 
     if (game.enable_free_parking) {
         transactionTypes.push(
-            { value: 'toFreeParking', label: 'Otoparka Öde', icon: Car, color: '#9333ea' },
-            { value: 'fromFreeParking', label: 'Otoparktan Al', icon: Car, color: '#06b6d4' }
+            { value: 'toFreeParking', label: t('pay_to_parking'), icon: Car, color: '#9333ea' },
+            { value: 'fromFreeParking', label: t('take_from_parking'), icon: Car, color: '#06b6d4' }
         );
     }
 
@@ -170,7 +172,7 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                 </div>
 
                 <div className="info-box">
-                    <div className="info-label">Mevcut Bakiyeniz</div>
+                    <div className="info-label">{t('current_balance')}</div>
                     <div className="info-value">
                         ${currentPlayer.balance.toLocaleString()}
                     </div>
@@ -180,7 +182,7 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                     {/* Manuel İşlem Tipi Seçimi */}
                     {!isSimpleMode && (
                         <div className="form-group">
-                            <label className="form-label">İşlem Tipi</label>
+                            <label className="form-label">{t('transaction_type')}</label>
                             <div className="transaction-grid">
                                 {transactionTypes.map((type) => {
                                     const Icon = type.icon;
@@ -208,14 +210,14 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                     {/* Oyuncu Seçimi */}
                     {!isSimpleMode && transactionType === 'toPlayer' && (
                         <div className="form-group">
-                            <label className="form-label">Alıcı Oyuncu</label>
+                            <label className="form-label">{t('recipient_player')}</label>
                             <select
                                 className="form-input"
                                 value={selectedPlayer}
                                 onChange={(e) => setSelectedPlayer(e.target.value)}
                                 required
                             >
-                                <option value="">Oyuncu Seçin...</option>
+                                <option value="">{t('select_player')}</option>
                                 {otherPlayers.map((player) => (
                                     <option key={player.user_id} value={player.user_id}>
                                         {player.name}
@@ -228,7 +230,7 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                     {/* Miktar Girişi (Bazı işlemlerde otomatik bakiye kullanılır) */}
                     {transactionType !== 'fromSalary' && transactionType !== 'fromFreeParking' && (
                         <div className="form-group">
-                            <label className="form-label">Miktar</label>
+                            <label className="form-label">{t('amount')}</label>
                             <div className="amount-input-wrapper">
                                 <DollarSign className="amount-icon" size={24} />
                                 <input
@@ -267,7 +269,7 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                                 onClick={() => setAmount('')}
                                 style={{ marginTop: '0.5rem', width: '100%' }}
                             >
-                                Sıfırla
+                                {t('reset')}
                             </button>
                         </div>
                     )}
@@ -279,14 +281,14 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                             onClick={onClose}
                             disabled={loading}
                         >
-                            İptal
+                            {t('cancel')}
                         </button>
                         <button
                             type="submit"
                             className="btn btn-success flex-1"
                             disabled={loading}
                         >
-                            {loading ? 'İşleniyor...' : 'Onayla'}
+                            {loading ? t('processing') : t('confirm')}
                         </button>
                     </div>
                 </form>
@@ -294,3 +296,4 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
         </div>
     );
 }
+

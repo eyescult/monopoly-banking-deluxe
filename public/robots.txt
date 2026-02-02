@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /tr
+Allow: /en
+Disallow: /app
+Disallow: /game/
+Disallow: /login
+Disallow: /set-username
+
+# Host
+Host: https://monopoly-app.com

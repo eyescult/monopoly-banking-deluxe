@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { Trophy, Clock, Share2, Home } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 export default function GameEndModal({ game, currentPlayer, winner, onClose, onLeaveGame }) {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     const isWinner = winner.user_id === currentPlayer.user_id;
 
     useEffect(() => {
@@ -39,7 +41,7 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
     }, [isWinner]);
 
     const gameDuration = () => {
-        if (!game.starting_timestamp) return '0sn';
+        if (!game.starting_timestamp) return `0${t('seconds_short')}`;
 
         const start = new Date(game.starting_timestamp);
         const end = game.ending_timestamp ? new Date(game.ending_timestamp) : new Date();
@@ -50,9 +52,9 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
         const seconds = Math.floor((diffMs % 60000) / 1000);
 
         if (hours > 0) {
-            return `${hours}sa ${minutes}dk`;
+            return `${hours}${t('hours')} ${minutes}${t('minutes')}`;
         } else if (minutes > 0) {
-            return `${minutes}dk ${seconds}sn`;
+            return `${minutes}${t('minutes')} ${seconds}sn`;
         }
         return `${seconds}sn`;
     };
@@ -69,9 +71,9 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
         const seconds = Math.floor((diffMs % 60000) / 1000);
 
         if (hours > 0) {
-            return `${hours}sa ${minutes}dk sonra iflas`;
+            return `${hours}${t('hours')} ${minutes}${t('minutes')} sonra iflas`;
         } else if (minutes > 0) {
-            return `${minutes}dk ${seconds}sn sonra iflas`;
+            return `${minutes}${t('minutes')} ${seconds}sn sonra iflas`;
         }
         return `${seconds}sn sonra iflas`;
     };
@@ -80,6 +82,10 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
         const message = isWinner
             ? `🏆 Monopoly oyununda kazandım! Oyun süresi: ${gameDuration()}`
             : `🎮 Monopoly oynadım! ${winner.name} kazandı. Oyun süresi: ${gameDuration()}`;
+        // Translation for share message is tricky because social apps might expect local lang.
+        // Keeping it simple or hardcoded might be safer unless we want to fully localize share text too.
+        // Let's keep existing logic but maybe localized string if possible.
+        // But 'gameDuration' returns localized string now.
 
         if (navigator.share) {
             try {
@@ -92,7 +98,7 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
             }
         } else {
             navigator.clipboard.writeText(message);
-            toast.success('Mesaj kopyalandı!');
+            toast.success(t('copied') || 'Mesaj kopyalandı!');
         }
     };
 
@@ -102,7 +108,7 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
             onClose();
             navigate('/');
         } else {
-            toast.error('Oyundan çıkış yapılamadı');
+            toast.error(t('leave_error') || 'Oyundan çıkış yapılamadı');
         }
     };
 
@@ -114,7 +120,7 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
                 </div>
 
                 <h2 className="game-end-title">
-                    {isWinner ? 'Oyunu kazandınız!' : `${winner.name} oyunu kazandı!`}
+                    {isWinner ? t('winner_is_you') || 'Oyunu kazandınız!' : t('winner_is_player', { name: winner.name }) || `${winner.name} oyunu kazandı!`}
                 </h2>
 
                 {!isWinner && currentPlayer.bankrupt_timestamp && (
@@ -127,25 +133,26 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
                 <div className="game-stats">
                     <div className="stat-item">
                         <Clock size={20} />
-                        <span>Oyun süresi: {gameDuration()}</span>
+                        <span>{t('play_time')}: {gameDuration()}</span>
                     </div>
                 </div>
 
                 <div className="game-end-message">
-                    Diğer tüm oyuncular iflas etti.
+                    {t('game_end_desc') || 'Diğer tüm oyuncular iflas etti.'}
                 </div>
 
                 <div className="modal-actions">
                     <button className="btn btn-outline flex-1" onClick={handleShare}>
                         <Share2 size={18} />
-                        Paylaş
+                        {t('share') || 'Paylaş'}
                     </button>
                     <button className="btn btn-primary flex-1" onClick={handleGoHome}>
                         <Home size={18} />
-                        Ana Sayfa
+                        {t('return_home')}
                     </button>
                 </div>
             </div>
         </div>
     );
 }
+

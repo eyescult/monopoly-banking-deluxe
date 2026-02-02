@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Yeni bir oyun oturumu başlatmak için kullanılan modal.
@@ -13,6 +14,7 @@ export default function CreateGameModal({ onClose }) {
     const { user } = useAuthStore();
     const { createGame } = useGameStore();
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     // Varsayılan oyun ayarları
     const [settings, setSettings] = useState({
@@ -33,11 +35,11 @@ export default function CreateGameModal({ onClose }) {
         setLoading(false);
 
         if (result.success) {
-            toast.success('Oyun oluşturuldu!');
+            toast.success(t('game_created'));
             // Oluşturulan oyunun sayfasına yönlendir
             navigate(`/game/${result.gameId}`);
         } else {
-            toast.error(result.error || 'Oyun oluşturulamadı');
+            toast.error(result.error || t('create_error'));
         }
     };
 
@@ -45,7 +47,7 @@ export default function CreateGameModal({ onClose }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2 className="modal-title">Yeni Oyun Kur</h2>
+                    <h2 className="modal-title">{t('new_game_title')}</h2>
                     <button onClick={onClose} className="btn btn-small btn-ghost">
                         <X size={20} />
                     </button>
@@ -54,7 +56,7 @@ export default function CreateGameModal({ onClose }) {
                 <form onSubmit={handleSubmit}>
                     {/* Başlangıç Sermayesi Ayarı */}
                     <div className="form-group">
-                        <label className="form-label">Başlangıç Sermayesi</label>
+                        <label className="form-label">{t('starting_capital')}</label>
                         <input
                             type="number"
                             className="form-input"
@@ -68,7 +70,7 @@ export default function CreateGameModal({ onClose }) {
 
                     {/* Maaş Ayarı */}
                     <div className="form-group">
-                        <label className="form-label">Maaş (GO Üzerinden Geçiş)</label>
+                        <label className="form-label">{t('salary')}</label>
                         <input
                             type="number"
                             className="form-input"
@@ -88,10 +90,10 @@ export default function CreateGameModal({ onClose }) {
                                 checked={settings.enableFreeParking}
                                 onChange={(e) => setSettings({ ...settings, enableFreeParking: e.target.checked })}
                             />
-                            <span>Ücretsiz Otopark Parası Etkin</span>
+                            <span>{t('free_parking_enable')}</span>
                         </label>
                         <p className="text-sm text-secondary mt-1">
-                            Vergiler ve cezalar ortaya konur, ücretsiz otoparka gelen oyuncu alır
+                            {t('free_parking_desc')}
                         </p>
                     </div>
 
@@ -102,14 +104,14 @@ export default function CreateGameModal({ onClose }) {
                             onClick={onClose}
                             disabled={loading}
                         >
-                            İptal
+                            {t('cancel')}
                         </button>
                         <button
                             type="submit"
                             className="btn btn-primary flex-1"
                             disabled={loading}
                         >
-                            {loading ? 'Oluşturuluyor...' : 'Oluştur'}
+                            {loading ? t('creating') : t('create')}
                         </button>
                     </div>
                 </form>
@@ -117,3 +119,4 @@ export default function CreateGameModal({ onClose }) {
         </div>
     );
 }
+

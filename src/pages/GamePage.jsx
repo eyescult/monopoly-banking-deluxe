@@ -1,680 +1,514 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
-import { LogOut, Share2, Upload, Download, Building2, Wallet, Car, User, Clock, ArrowLeft, Trash2, XCircle } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
+import { useAuthStore } from '../store/authStore';
+import {
+    Menu, X, DollarSign, Send, ArrowRightLeft,
+    LogOut, History, ShieldAlert, BadgeInfo,
+    MoreHorizontal, CircleAlert, Globe
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+
+
 import TransactionModal from '../components/TransactionModal';
 import GameEndModal from '../components/GameEndModal';
-import { formatDisplayName } from '../utils/formatName';
 import Avatar from '../components/Avatar';
+import { useTranslation } from 'react-i18next';
 
-/**
- * Oyunun ana ekranı. Realtime güncellemeleri, bakiye yönetimini,
- * transfer işlemlerini ve oyun akışını yönetir.
- */
 export default function GamePage() {
     const { gameId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const { currentGame, subscribeToGame, leaveGame, startGame, joinGame, cleanup, makeTransaction, kickPlayer, disbandGame } = useGameStore();
+    const { t, i18n } = useTranslation();
 
+    const {
+        game,
+        subscribeToGame,
+        leaveGame,
+        endGame,
+        bankruptPlayer
+    } = useGameStore();
 
     // UI States
-    const [modalConfig, setModalConfig] = useState(null);
+    const [showSidebar, setShowSidebar] = useState(false);
+    const [showTransactionModal, setShowTransactionModal] = useState(false);
+    const [transactionConfig, setTransactionConfig] = useState(null);
+    const [showGameEndModal, setShowGameEndModal] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+    const [confirmEndGame, setConfirmEndGame] = useState(false);
 
-    // Use refs instead of state for tracking flags to avoid synchronous setState in effects
-    const hasTriedJoiningRef = useRef(false);
-    const gameLoadedRef = useRef(false);
+    // Sidebar referansı (dışarı tıklandığında kapanması için)
+    const sidebarRef = useRef(null);
 
-    // Derive showGameEndModal from currentGame state instead of using an effect
-    const showGameEndModal = !!currentGame?.winner_id;
-
-    /**
-     * Cleanup function wrapped in useCallback for stable reference
-     */
-    const cleanupGame = useCallback(() => {
-        toast.dismiss();
-        cleanup();
-    }, [cleanup]);
+    // Initial Loading State
+    const [initialLoading, setInitialLoading] = useState(true);
 
     /**
-     * Sayfa yüklendiğinde oyun kanalına abone olur.
-     * Ekran kapanıp açıldığında bağlantıyı ve veriyi yeniler (Page Visibility API).
-     * Sayfadan ayrıldığında kanaldan ayrılır.
+     * Oyuna bağlanma ve real-time abonelik başlatma.
      */
     useEffect(() => {
-        let isMounted = true;
+        if (!user || !gameId) return;
 
-        if (gameId) {
-            // İlk yüklemede görünürlük durumunu ayarla
-            useGameStore.getState().setPageVisibility(document.visibilityState === 'visible');
+        let subscription = null;
 
-            subscribeToGame(gameId);
+        const connect = async () => {
+            const result = await subscribeToGame(gameId);
+            setInitialLoading(false);
 
-            // 5 saniye içinde oyun verisi gelmezse hata ver ve geri dön
-            const timeout = setTimeout(async () => {
-                if (isMounted && !useGameStore.getState().currentGame) {
-                    // current_game_id'yi temizle (sonsuz döngüyü engelle)
-                    await useAuthStore.getState().setCurrentGameId(null);
-                    toast.error('Oyun bulunamadı veya bağlantı hatası');
-                    navigate('/');
-                }
-            }, 5000);
-
-            /**
-             * Page Visibility API: Ekran kapanıp açıldığında
-             * realtime bağlantısını kontrol et ve veriyi yenile.
-             * Bu, telefon ekranı kapandığında WebSocket'in kopması sorununu çözer.
-             */
-            const handleVisibilityChange = () => {
-                if (document.visibilityState === 'visible') {
-                    console.log('[Visibility] Page became visible. Forcing reload to refresh stale connections...');
-                    window.location.reload();
-                }
-            };
-
-            document.addEventListener('visibilitychange', handleVisibilityChange);
-
-            return () => {
-                clearTimeout(timeout);
-                isMounted = false;
-                // Visibility listener'ı temizle
-                document.removeEventListener('visibilitychange', handleVisibilityChange);
-                cleanupGame();
-            };
-        }
-    }, [gameId, subscribeToGame, navigate, cleanupGame]);
-
-    /**
-     * Kullanıcı oyuna henüz dahil değilse otomatik katılma işlemi yapar.
-     */
-    useEffect(() => {
-        if (currentGame && user && !currentGame.starting_timestamp && !hasTriedJoiningRef.current) {
-            const isPlayer = currentGame.players.some(p => p.user_id === user.id);
-            if (!isPlayer) {
-                hasTriedJoiningRef.current = true;
-                joinGame(gameId, user.id).then(result => {
-                    if (result.success) {
-                        toast.success('Oyuna giriş yapıldı');
-                    } else {
-                        toast.error(result.error);
-                    }
-                });
-            }
-        } else if (currentGame && user && hasTriedJoiningRef.current) {
-            // Eğer daha önce katılmayı denediysek (veya katıldıysak) ve şu an listede yoksak -> Atıldık
-            // Bu kontrolün sürekli tekrarlanmaması için ref veya state kontrolü yapabiliriz ama
-            // cleanup sonrası currentGame null olacağı için döngü kırılacaktır.
-            // Yine de ID vererek garantiye alalım.
-            const isPlayer = currentGame.players.some(p => p.user_id === user.id);
-            if (!isPlayer) {
-                // Temizlik yap ve anasayfaya yönlendir
-                cleanup();
-                useAuthStore.getState().setCurrentGameId(null);
-                toast.error('Oyundan atıldınız!', { id: 'kicked-toast' });
+            if (!result.success) {
+                toast.error(result.error || t('game_connect_error'));
                 navigate('/');
-            }
-        }
-    }, [currentGame, user, gameId, joinGame, cleanup, navigate]);
-
-    /**
-     * Oyun silindiğinde ana sayfaya yönlendir.
-     */
-    useEffect(() => {
-        if (currentGame) {
-            gameLoadedRef.current = true;
-        } else if (gameLoadedRef.current && !currentGame) {
-            // current_game_id'yi temizle (sonsuz döngüyü engelle)
-            useAuthStore.getState().setCurrentGameId(null);
-            toast.error('Oyun kurucu tarafından sonlandırıldı', { id: 'game-ended-toast' });
-            navigate('/');
-        }
-    }, [currentGame, navigate]);
-
-
-    /**
-     * Gelen işlemleri takip eder ve sadece yeni olanlar için bildirim gösterir.
-     * Sayfa yenilendiğinde eski bildirimlerin tekrar gösterilmesini engeller.
-     */
-    const lastProcessedTxRef = useRef(null);
-
-    useEffect(() => {
-        // Oyun veya işlem geçmişi henüz yoksa çık
-        if (!currentGame?.transaction_history) return;
-
-        // İlk yükleme (mount) anında:
-        // Geçmişteki işlemleri "yeni" olarak algılamamak için son işlemin zamanını işaretle.
-        if (lastProcessedTxRef.current === null) {
-            if (currentGame.transaction_history.length > 0) {
-                // En yeni işlem [0] indeksindedir (gameStore yapısına göre)
-                lastProcessedTxRef.current = currentGame.transaction_history[0].timestamp;
             } else {
-                // Hiç işlem yoksa şu anı işaretle
-                lastProcessedTxRef.current = new Date().toISOString();
+                subscription = result.subscription;
             }
-            return;
+        };
+
+        connect();
+
+        return () => {
+            if (subscription) {
+                subscription.unsubscribe();
+            }
+        };
+    }, [user, gameId, subscribeToGame, navigate, t]);
+
+    /**
+     * Oyun bittiğinde modalı göster.
+     */
+    useEffect(() => {
+        if (game?.status === 'completed' && game.winner_id) {
+            const timer = setTimeout(() => {
+                setShowGameEndModal(true);
+            }, 0);
+            return () => clearTimeout(timer);
+        }
+    }, [game?.status, game?.winner_id]);
+
+    /**
+     * Dışarı tıklama kontrolü (Sidebar için)
+     */
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (sidebarRef.current && !sidebarRef.current.contains(event.target)) {
+                setShowSidebar(false);
+            }
+        };
+
+        if (showSidebar) {
+            document.addEventListener('mousedown', handleClickOutside);
         }
 
-        // Yeni işlemleri tespit et
-        const newTransactions = [];
-        // En yeni işlemden geriye doğru git, son işleneni bulana kadar
-        for (const tx of currentGame.transaction_history) {
-            // Eğer bu işlemin zamanı son işlenene eşit veya küçükse dur (daha eskidir veya aynısıdır)
-            if (tx.timestamp <= lastProcessedTxRef.current) break;
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showSidebar]);
 
-            newTransactions.push(tx);
-        }
 
-        // Eğer yeni işlem varsa
-        if (newTransactions.length > 0) {
-            // İşaretçiyi en yeni işlemin zamanına güncelle
-            lastProcessedTxRef.current = newTransactions[0].timestamp;
+    // Loading ekranı
+    if (initialLoading || !game) {
+        return (
+            <div className="loading-screen">
+                <div className="spinner"></div>
+                <p>{t('connecting')}</p>
+            </div>
+        );
+    }
 
-            // Her yeni işlemi kullanıcıya bildir (sadece gelen para vs.)
-            // Ters çeviriyoruz ki kronolojik sırayla (eskiden yeniye) bildirim düşsün
-            [...newTransactions].reverse().forEach(tx => {
-                // Sadece BANA gelen paralar için bildirim göster
-                if (tx.to_user_id === user.id && tx.from_user_id !== user.id) {
-                    const fromPlayer = currentGame.players.find(p => p.user_id === tx.from_user_id);
-                    const fromName = fromPlayer ? formatDisplayName(fromPlayer.name) : 'Bilinmeyen';
+    const currentPlayer = game.players.find(p => p.user_id === user.id);
+    const isHost = game.created_by === user.id;
 
-                    // Benzersiz ID ile toast oluştur ki react-hot-toast aynısını basmasın
-                    toast.success(`${fromName} size $${tx.amount.toLocaleString()} gönderdi!`, {
-                        id: `tx-${tx.timestamp}`,
-                        duration: 5000
-                    });
-                }
-            });
-        }
-    }, [currentGame?.transaction_history, currentGame?.players, user.id]);
+    // Oyuncu oyunda değilse (örn. atıldıysa veya hata olduysa)
+    if (!currentPlayer) {
+        return (
+            <div className="error-screen">
+                <h2>{t('not_in_game_title')}</h2>
+                <button className="btn btn-primary" onClick={() => navigate('/')}>
+                    {t('return_home')}
+                </button>
+            </div>
+        );
+    }
 
     /**
      * Oyundan ayrılma işlemi.
      */
     const handleLeaveGame = async () => {
-        if (confirm('Oyundan ayrılmak istediğinize emin misiniz?')) {
-            const result = await leaveGame(user.id);
-            if (result.success) {
-                navigate('/');
-            }
-        }
-    };
-
-    /**
-     * Oyunu ve lobiyi tamamen dağıtma (Sadece Kurucu).
-     */
-    const handleDisbandGame = async () => {
-        if (confirm('DİKKAT: Oyunu tamamen bitirmek ve herkesi atmak istediğinize emin misiniz?')) {
-            const result = await disbandGame(gameId);
-            if (result.success) {
-                toast.success('Oyun dağıtıldı');
-                navigate('/');
-            } else {
-                toast.error(result.error);
-            }
-        }
-    };
-
-    /**
-     * Oyunu kurucu tarafından resmen başlatır.
-     */
-    const handleStartGame = async () => {
-        const result = await startGame(gameId);
+        const result = await leaveGame(game.id, user.id);
         if (result.success) {
-            toast.success('Oyun başladı!');
+            navigate('/');
         } else {
-            toast.error('Oyun başlatılamadı');
+            toast.error(t('leave_error'));
         }
     };
 
     /**
-     * Oyun linkini veya kodunu paylaşır.
+     * Oyunu sonlandırma işlemi (Sadece kurucu).
      */
-    const handleShare = async () => {
-        const gameUrl = `${window.location.origin}/game/${gameId}`;
-
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'Monopoly Oyununa Katıl',
-                    text: `Oyun Kodu: ${gameId}`,
-                    url: gameUrl
-                });
-            } catch {
-                console.log('Share cancelled');
-            }
+    const handleEndGame = async () => {
+        const result = await endGame(game.id);
+        if (result.success) {
+            setConfirmEndGame(false);
+            toast.success(t('game_ended'));
         } else {
-            navigator.clipboard.writeText(gameUrl);
-            toast.success('Oyun linki kopyalandı!');
+            toast.error(t('end_game_error'));
         }
     };
 
     /**
-     * İşlem modalını açar veya hızlı maaş ödemesini yapar.
-     * Maaş işlemi için timeout mekanizması eklendi.
+     * İşlem modalını açar (Bankadan para çek, oyuncuya öde vb.)
      */
-    const openTransactionModal = async (type, targetId = null) => {
-        // İflas eden kullanıcı işlem yapamaz
-        const player = currentGame.players.find(p => p.user_id === user.id);
-        if (player?.bankrupt_timestamp) {
-            toast.error('İflas ettiğiniz için işlem yapamazsınız!', { id: 'bankrupt-error' });
-            return;
-        }
-
-        if (type === 'fromSalary') {
-            const loadingToast = toast.loading('Maaş yatırılıyor...');
-
-            try {
-                // Timeout ile maaş işlemini gerçekleştir
-                const result = await Promise.race([
-                    makeTransaction({
-                        gameId: currentGame.id,
-                        type: 'fromSalary',
-                        amount: currentGame.salary,
-                        toUserId: user.id
-                    }),
-                    new Promise((_, reject) =>
-                        // 35 saniye bekle
-                        setTimeout(() => reject(new Error('TIMEOUT')), 35000)
-                    )
-                ]);
-
-                toast.dismiss(loadingToast);
-                if (result.success) {
-                    toast.success('Maaş alındı!');
-                } else {
-                    toast.error(`Hata: ${result.error || 'İşlem başarısız'}`);
-                }
-            } catch (err) {
-                toast.dismiss(loadingToast);
-                if (err.message === 'TIMEOUT') {
-                    // Bağlantı hatası varsayımıyla yenilemeyi tetikle
-                    console.log('[GamePage] Transaction timed out, forcing reload...');
-
-                    toast.error('Bağlantı zaman aşımı. Sayfa yenileniyor...', {
-                        id: 'salary-timeout',
-                        duration: 3000
-                    });
-
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 3000);
-                } else if (err.message === 'QUEUE_TIMEOUT') {
-                    toast.error('İşlem çok uzun süre bekledi. Lütfen tekrar deneyin.', {
-                        id: 'salary-queue-timeout',
-                        duration: 5000
-                    });
-                } else {
-                    toast.error(`Beklenmeyen hata: ${err.message}`);
-                }
-            }
-            return;
-        }
-
-        setModalConfig({ type, targetId });
+    const openTransaction = (type = 'fromBank', targetId = null) => {
+        setTransactionConfig({ type, targetId });
+        setShowTransactionModal(true);
+        setShowSidebar(false);
     };
 
     /**
-     * Oyuncu atma işlemi
+     * İflas bildirme işlemi.
      */
-    const handleKickPlayer = async (targetId, targetName) => {
-        if (window.confirm(`${targetName} adlı oyuncuyu oyundan atmak istediğinize emin misiniz?`)) {
-            const result = await kickPlayer(gameId, targetId);
+    const handleBankruptcy = async () => {
+        if (confirm(t('bankruptcy_confirm'))) {
+            setInitialLoading(true);
+            const result = await bankruptPlayer(game.id, user.id);
             if (result.success) {
-                toast.success(`${targetName} oyundan atıldı`);
+                toast.success(t('bankruptcy_declared'));
             } else {
-                toast.error(`Hata: ${result.error}`);
+                toast.error(result.error || t('bankruptcy_error'));
             }
+            setInitialLoading(false);
         }
     };
 
-    // Yükleniyor durumu
-    if (!currentGame) {
-        return (
-            <div className="game-page">
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-                    <div className="spinner"></div>
-                </div>
-            </div>
-        );
-    }
+    /**
+     * Tarih formatlama yardımcısı.
+     */
+    const formatTime = (isoString) => {
+        if (!isoString) return '';
+        const date = new Date(isoString);
+        return date.toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'tr-TR', { hour: '2-digit', minute: '2-digit' });
+    };
 
-    const isCreator = currentGame.players.find(p => p.user_id === user.id)?.is_game_creator;
-    const hasStarted = currentGame.starting_timestamp !== null;
+    /**
+     * İşlem geçmişini daha okunabilir hale getirir.
+     */
+    const getTransactionDesc = (tx) => {
+        const amount = `$${tx.amount.toLocaleString()}`;
 
-    // Lobi / Bekleme Ekranı
-    if (!hasStarted || currentGame.players.length < 2) {
-        return (
-            <div className="game-page">
-                <header className="game-header">
-                    <div className="game-header-left">
-                        <button className="icon-btn" onClick={() => navigate('/')}><ArrowLeft size={24} /></button>
-                        <span className="game-code">#{gameId}</span>
-                    </div>
-                    {isCreator ? (
-                        <button className="icon-btn" onClick={handleDisbandGame} style={{ color: 'var(--danger)' }} title="Oyunu Dağıt">
-                            <XCircle size={24} />
-                        </button>
-                    ) : (
-                        <button className="icon-btn" onClick={handleLeaveGame} title="Ayrıl">
-                            <LogOut size={24} />
-                        </button>
-                    )}
-                </header>
-                <div className="container" style={{ paddingTop: 'var(--spacing-2xl)' }}>
-                    <div className="lobby-card fade-in">
-                        <h2 className="text-center mb-4">Lobi: #{gameId}</h2>
-                        <div className="qr-container">
-                            <QRCodeSVG value={`${window.location.origin}/game/${gameId}`} size={200} />
-                        </div>
-                        <div className="players-list">
-                            <h3 className="mb-3">Oyuncular ({currentGame.players.length})</h3>
-                            {currentGame.players.map((player, index) => (
-                                <div key={index} className="player-item">
-                                    <Avatar
-                                        user={{ id: player.user_id, name: player.name, photo_url: player.photo_url }}
-                                        size={40}
-                                    />
-                                    <span className="player-name">{player.name}</span>
-                                    {isCreator && player.user_id !== user.id && (
-                                        <button
-                                            className="icon-btn"
-                                            onClick={() => handleKickPlayer(player.user_id, player.name)}
-                                            style={{ marginLeft: 'auto', color: 'var(--danger)', padding: '4px' }}
-                                            title="Oyundan At"
-                                        >
-                                            <Trash2 size={20} />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                        {isCreator && currentGame.players.length >= 2 && (
-                            <button className="btn btn-success btn-large mt-4" style={{ width: '100%' }} onClick={handleStartGame}>
-                                Oyunu Başlat
-                            </button>
-                        )}
-                        <button className="btn btn-outline mt-2" style={{ width: '100%' }} onClick={handleShare}>
-                            <Share2 size={16} /> Davet Et
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+        if (tx.type === 'initial_balance') return t('tx_initial_balance');
+        if (tx.type === 'join_bonus') return t('tx_join_bonus');
 
-    const otherPlayers = currentGame.players.filter(p => p.user_id !== user.id);
-    const currentPlayer = currentGame.players.find(p => p.user_id === user.id);
-    const isBankrupt = currentPlayer?.bankrupt_timestamp !== null;
+        const fromPlayer = game.players.find(p => p.user_id === tx.from_user_id);
+        const toPlayer = game.players.find(p => p.user_id === tx.to_user_id);
+        const fromName = fromPlayer ? fromPlayer.name : t('unknown_player');
+        const toName = toPlayer ? toPlayer.name : t('unknown_player');
+
+        switch (tx.type) {
+            case 'transfer':
+                return t('tx_transfer', { from: fromName, to: toName, amount });
+            case 'pay_bank':
+                return t('tx_pay_bank', { name: fromName, amount });
+            case 'receive_bank':
+                return t('tx_receive_bank', { name: toName, amount });
+            case 'pay_parking':
+                return t('tx_pay_parking', { name: fromName, amount });
+            case 'receive_parking':
+                return t('tx_receive_parking', { name: toName, amount });
+            case 'salary':
+                return t('tx_salary', { name: toName, amount });
+            default:
+                return t('tx_unknown');
+        }
+    };
+
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+    };
+
+    const isBankrupt = !!currentPlayer.bankrupt_timestamp;
 
     return (
-        <div className="game-page">
-            <header className="game-header">
-                <div className="game-header-left">
-                    <button className="icon-btn" onClick={() => navigate('/')}><ArrowLeft size={24} /></button>
-                    <span className="game-code">#{gameId}</span>
-                </div>
-                {isCreator ? (
-                    <button className="icon-btn" onClick={handleDisbandGame} style={{ color: 'var(--danger)' }} title="Oyunu Bitir">
-                        <XCircle size={24} />
-                    </button>
-                ) : (
-                    <button className="icon-btn" onClick={handleLeaveGame} title="Ayrıl">
-                        <LogOut size={24} />
-                    </button>
-                )}
-            </header>
+        <div className={`game-page ${isBankrupt ? 'bankrupt-mode' : ''}`}>
+            {/* Sidebar Overlay */}
+            {showSidebar && (
+                <div className="sidebar-overlay" onClick={() => setShowSidebar(false)}></div>
+            )}
 
-            {/* Bakiye Gösterimi */}
-            <div className="balance-section">
-                <h1 className="main-balance" style={currentPlayer?.balance <= 0 ? { color: 'var(--danger)' } : {}}>
-                    ${currentPlayer?.balance?.toLocaleString()}
-                </h1>
-                {currentPlayer?.balance <= 0 && (
-                    <div className="bankrupt-badge">💸 İflas ettiniz</div>
-                )}
-            </div>
-
-            <div className="scrollable-content">
-                {/* Ödeme Bölümü */}
-                <div className="section-header">
-                    <span>ÖDE</span>
-                    <Upload size={16} />
+            {/* Sidebar Start */}
+            <div ref={sidebarRef} className={`sidebar ${showSidebar ? 'open' : ''}`}>
+                <div className="sidebar-header">
+                    <h3>{t('game_menu')}</h3>
+                    <button className="sidebar-close" onClick={() => setShowSidebar(false)}>
+                        <X size={24} />
+                    </button>
                 </div>
 
-                <div className="action-list">
-                    {otherPlayers.map(player => (
-                        <div key={player.user_id} style={{ position: 'relative', marginBottom: '8px' }}>
-                            <button
-                                className="action-item"
-                                onClick={() => openTransactionModal('toPlayer', player.user_id)}
-                                disabled={player.bankrupt_timestamp !== null || isBankrupt}
-                                style={{
-                                    width: '100%',
-                                    marginBottom: 0,
-                                    ...((player.bankrupt_timestamp || isBankrupt) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
-                                }}
-                            >
-                                <div className="player-info">
-                                    <Avatar
-                                        user={{ id: player.user_id, name: player.name, photo_url: player.photo_url }}
-                                        size={40}
-                                        showBorder={true}
-                                    />
-                                    <div>
-                                        <span className="player-name">{formatDisplayName(player.name)}</span>
-                                        {player.bankrupt_timestamp && (
-                                            <div className="bankrupt-status">💸 Bankrupt</div>
-                                        )}
-                                    </div>
-                                </div>
-                                <span className="player-balance" style={player.bankrupt_timestamp ? { color: 'var(--danger)' } : {}}>
-                                    ${player.balance.toLocaleString()}
-                                </span>
-                            </button>
-                            {isCreator && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleKickPlayer(player.user_id, player.name);
-                                    }}
-                                    style={{
-                                        position: 'absolute',
-                                        right: '-10px',
-                                        top: '-10px',
-                                        background: 'var(--danger)',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '50%',
-                                        width: '24px',
-                                        height: '24px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        zIndex: 10,
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }}
-                                    title="Oyundan At"
-                                >
-                                    <Trash2 size={14} />
-                                </button>
-                            )}
+                <div className="player-list-mini">
+                    <h4>{t('players')}</h4>
+                    {game.players.map(p => (
+                        <div key={p.user_id} className={`player-row ${p.bankrupt_timestamp ? 'bankrupt' : ''}`}>
+                            <Avatar user={p} size={32} />
+                            <span className="player-name">{p.name}</span>
+                            <span className="player-balance">${p.balance.toLocaleString()}</span>
                         </div>
                     ))}
-                    <button
-                        className="action-item"
-                        onClick={() => openTransactionModal('toBank')}
-                        disabled={isBankrupt}
-                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                    >
-                        <div className="player-info">
-                            <div className="player-avatar bank-avatar"><Building2 size={20} color="white" /></div>
-                            <span className="player-name">Banka</span>
-                        </div>
+                </div>
+
+                <div className="sidebar-divider"></div>
+
+                <div className="menu-items">
+                    <button className="menu-item" onClick={() => { setShowHistory(true); setShowSidebar(false); }}>
+                        <History size={20} />
+                        <span>{t('tx_history')}</span>
                     </button>
-                    {currentGame.enable_free_parking && (
-                        <button
-                            className="action-item"
-                            onClick={() => openTransactionModal('toFreeParking')}
-                            disabled={isBankrupt}
-                            style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                        >
-                            <div className="player-info">
-                                <div className="player-avatar parking-avatar"><Car size={20} color="white" /></div>
-                                <span className="player-name">Otopark</span>
-                            </div>
+
+                    <button className="menu-item danger" onClick={handleBankruptcy} disabled={isBankrupt}>
+                        <ShieldAlert size={20} />
+                        <span>{t('declare_bankruptcy')}</span>
+                    </button>
+
+                    {isHost && (
+                        <button className="menu-item danger" onClick={() => setConfirmEndGame(true)}>
+                            <CircleAlert size={20} />
+                            <span>{t('end_game')}</span>
                         </button>
                     )}
+
+                    <button className="menu-item warning" onClick={handleLeaveGame}>
+                        <LogOut size={20} />
+                        <span>{t('leave_game')}</span>
+                    </button>
                 </div>
 
-                {/* Alma Bölümü */}
-                <div className="section-header mt-4">
-                    <span>AL</span>
-                    <Download size={16} />
-                </div>
+                <div className="sidebar-divider"></div>
 
-                <div className="grid-actions">
-                    <button
-                        className="grid-btn"
-                        onClick={() => openTransactionModal('fromBank')}
-                        disabled={isBankrupt}
-                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                    >
-                        <Building2 size={24} />
-                        <span>Banka</span>
-                    </button>
-                    <button
-                        className="grid-btn"
-                        onClick={() => openTransactionModal('fromSalary')}
-                        disabled={isBankrupt}
-                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                    >
-                        <Wallet size={24} />
-                        <span>Maaş</span>
-                    </button>
-                    {currentGame.enable_free_parking && (
+                {/* Language Switcher in Sidebar */}
+                <div className="sidebar-item-group">
+                    <div className="sidebar-item-header">
+                        <Globe size={20} />
+                        <span>{t('language')}</span>
+                    </div>
+                    <div className="language-options" style={{ paddingLeft: '44px', display: 'flex', gap: '8px', marginTop: '8px' }}>
                         <button
-                            className="grid-btn"
-                            onClick={() => openTransactionModal('fromFreeParking')}
-                            disabled={isBankrupt}
-                            style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                            className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => changeLanguage('tr')}
+                            style={{ flex: 1 }}
                         >
-                            <Car size={24} />
-                            <span>Otopark</span>
+                            {t('turkish')}
                         </button>
-                    )}
+                        <button
+                            className={`btn btn-small ${i18n.language === 'en' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => changeLanguage('en')}
+                            style={{ flex: 1 }}
+                        >
+                            {t('english')}
+                        </button>
+                    </div>
                 </div>
 
-                {/* İşlem Geçmişi */}
-                <div className="section-header mt-4">
-                    <span>GEÇMİŞ</span>
-                    <Clock size={16} />
+                <div className="game-code-section">
+                    <span>{t('game_code_label')}:</span>
+                    <span className="code">{game.id}</span>
                 </div>
+            </div>
+            {/* Sidebar End */}
 
-                <div className="history-list">
-                    {currentGame.transaction_history?.slice(0, 50).map((tx, index) => {
-                        const fromPlayer = currentGame.players.find(p => p.user_id === tx.from_user_id);
-                        const toPlayer = currentGame.players.find(p => p.user_id === tx.to_user_id);
 
-                        const fromName = fromPlayer ? formatDisplayName(fromPlayer.name) : 'Bilinmeyen';
-                        const toName = toPlayer ? formatDisplayName(toPlayer.name) : 'Bilinmeyen';
+            {/* Üst Bar */}
+            <div className="game-header">
+                <div className="user-info">
+                    <Avatar user={currentPlayer} size={40} />
+                    <div>
+                        <div className="user-name">{currentPlayer.name}</div>
+                        {isBankrupt && <div className="status-badge error">{t('bankrupt')}</div>}
+                    </div>
+                </div>
+                <div className="game-code-display">
+                    {game.id}
+                </div>
+                <button className="menu-btn" onClick={() => setShowSidebar(true)}>
+                    <Menu size={24} />
+                </button>
+            </div>
 
-                        const isMyTransaction = tx.from_user_id === user.id || tx.to_user_id === user.id;
-                        const isIncoming = tx.to_user_id === user.id;
-                        const isOutgoing = tx.from_user_id === user.id;
-
-                        let message = '';
-                        let icon = <Clock size={16} color="#90A4AE" />;
-                        let amountClass = 'text-secondary';
-
-                        switch (tx.type) {
-                            case 'fromSalary':
-                                message = `${toName} maaş aldı`;
-                                icon = <Wallet size={16} color="#FF9800" />;
-                                if (isIncoming) amountClass = 'text-success';
-                                break;
-
-                            case 'fromBank':
-                                message = `${toName} bankadan çekti`;
-                                icon = <Building2 size={16} color="#4CAF50" />;
-                                if (isIncoming) amountClass = 'text-success';
-                                break;
-
-                            case 'toBank':
-                                message = `${fromName} bankaya ödedi`;
-                                icon = <Building2 size={16} color="#F44336" />;
-                                if (isOutgoing) amountClass = 'text-danger';
-                                break;
-
-                            case 'toFreeParking':
-                                message = `${fromName} otoparka ödedi`;
-                                icon = <Car size={16} color="#9C27B0" />;
-                                if (isOutgoing) amountClass = 'text-danger';
-                                break;
-
-                            case 'fromFreeParking':
-                                message = `${toName} otoparkı topladı`;
-                                icon = <Car size={16} color="#00BCD4" />;
-                                if (isIncoming) amountClass = 'text-success';
-                                break;
-
-                            case 'toPlayer':
-                                message = `${fromName} ➜ ${toName}`;
-                                icon = <Upload size={16} color="#2196F3" />;
-                                if (isIncoming) amountClass = 'text-success';
-                                else if (isOutgoing) amountClass = 'text-danger';
-                                break;
-
-                            default:
-                                message = 'Bilinmeyen işlem';
-                        }
-
-                        let amountPrefix = '';
-                        if (isIncoming) amountPrefix = '+';
-                        else if (isOutgoing) amountPrefix = '-';
-
-                        return (
-                            <div key={index} className="history-item" style={{ opacity: isMyTransaction ? 1 : 0.7 }}>
-                                <div className="history-icon" style={{ minWidth: '24px' }}>
-                                    {icon}
-                                </div>
-                                <div className="history-details">
-                                    <div className="history-text" style={{ fontSize: '14px', fontWeight: isMyTransaction ? '600' : '400' }}>
-                                        {message}
-                                    </div>
-                                    <div className="history-time" style={{ fontSize: '11px', color: '#64748B' }}>
-                                        {new Date(tx.timestamp).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                                    </div>
-                                </div>
-                                <div className={`history-amount ${amountClass}`} style={{ fontWeight: 'bold' }}>
-                                    {amountPrefix}${tx.amount.toLocaleString()}
-                                </div>
-                            </div>
-                        );
-                    })}
+            {/* Bakiye Kartı */}
+            <div className="balance-card fade-in">
+                <div className="balance-label">{t('current_balance')}</div>
+                <div className="balance-amount">
+                    ${currentPlayer.balance.toLocaleString()}
                 </div>
             </div>
 
+            {/* Hızlı İşlemler */}
+            <div className="quick-actions fade-in-up">
+                <button
+                    className="action-btn success"
+                    onClick={() => openTransaction('fromBank')}
+                    disabled={isBankrupt}
+                >
+                    <div className="icon-wrapper">
+                        <DollarSign size={24} />
+                    </div>
+                    <span>{t('withdraw_bank')}</span>
+                </button>
+
+                <button
+                    className="action-btn warning"
+                    onClick={() => openTransaction('fromSalary')}
+                    disabled={isBankrupt}
+                >
+                    <div className="icon-wrapper">
+                        <DollarSign size={24} />
+                    </div>
+                    <span>{t('salary_receive')}</span>
+                </button>
+
+                <button
+                    className="action-btn danger"
+                    onClick={() => openTransaction('toBank')}
+                    disabled={isBankrupt}
+                >
+                    <div className="icon-wrapper">
+                        <DollarSign size={24} />
+                    </div>
+                    <span>{t('pay_bank')}</span>
+                </button>
+
+                {game.enable_free_parking && (
+                    <button
+                        className="action-btn info"
+                        onClick={() => openTransaction('toFreeParking')}
+                        disabled={isBankrupt}
+                    >
+                        <div className="icon-wrapper">
+                            <DollarSign size={24} />
+                        </div>
+                        <span>{t('pay_parking')}</span>
+                    </button>
+                )}
+            </div>
+
+            {/* Oyuncu Listesi (Transfer için) */}
+            <div className="players-section fade-in-up">
+                <div className="section-header">
+                    <h3>{t('transfer_to_player')}</h3>
+                </div>
+                <div className="players-grid">
+                    {game.players
+                        .filter(p => p.user_id !== user.id && !p.bankrupt_timestamp)
+                        .map(player => (
+                            <button
+                                key={player.user_id}
+                                className="player-card"
+                                onClick={() => openTransaction('toPlayer', player.user_id)}
+                                disabled={isBankrupt}
+                            >
+                                <Avatar user={player} size={48} />
+                                <span className="player-name">{player.name}</span>
+                                <span className="send-icon">
+                                    <Send size={16} />
+                                    {t('send')}
+                                </span>
+                            </button>
+                        ))}
+
+                    {game.players.filter(p => p.user_id !== user.id && !p.bankrupt_timestamp).length === 0 && (
+                        <div className="empty-state">
+                            <p>{t('no_other_players')}</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Otopark Bilgisi (Opsiyonel) */}
+            {game.enable_free_parking && (
+                <div className="parking-card fade-in-up">
+                    <div className="parking-info">
+                        <div className="parking-label">{t('free_parking_balance')}</div>
+                        <div className="parking-amount">${game.free_parking_balance.toLocaleString()}</div>
+                    </div>
+                    <button
+                        className="btn btn-small btn-outline"
+                        onClick={() => openTransaction('fromFreeParking')}
+                        disabled={isBankrupt}
+                    >
+                        {t('collect')}
+                    </button>
+                </div>
+            )}
+
+
             {/* Modallar */}
-            {modalConfig && (
+
+            {showHistory && (
+                <div className="modal-overlay" onClick={() => setShowHistory(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">{t('last_transactions')}</h2>
+                            <button onClick={() => setShowHistory(false)} className="btn btn-small btn-ghost">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="history-list">
+                            {game.transactions && game.transactions.length > 0 ? (
+                                [...game.transactions].reverse().slice(0, 20).map((tx, idx) => (
+                                    <div key={idx} className="history-item">
+                                        <div className="history-icon">
+                                            <ArrowRightLeft size={16} />
+                                        </div>
+                                        <div className="history-details">
+                                            <div className="history-desc">
+                                                {getTransactionDesc(tx)}
+                                            </div>
+                                            <div className="history-time">
+                                                {formatTime(tx.created_at)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="empty-text">{t('no_transactions')}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {confirmEndGame && (
+                <div className="modal-overlay" onClick={() => setConfirmEndGame(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2 className="modal-title">{t('end_game')}?</h2>
+                        </div>
+                        <div className="modal-body">
+                            <p>{t('end_game_confirm')}</p>
+                        </div>
+                        <div className="modal-actions">
+                            <button className="btn btn-outline flex-1" onClick={() => setConfirmEndGame(false)}>{t('cancel')}</button>
+                            <button className="btn btn-danger flex-1" onClick={handleEndGame}>{t('end_game')}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showTransactionModal && (
                 <TransactionModal
-                    game={currentGame}
+                    game={game}
                     currentPlayer={currentPlayer}
-                    initialConfig={modalConfig}
-                    onClose={() => setModalConfig(null)}
+                    initialConfig={transactionConfig}
+                    onClose={() => {
+                        setShowTransactionModal(false);
+                        setTransactionConfig(null);
+                    }}
                 />
             )}
 
-            {showGameEndModal && currentGame?.winner_id && (
+            {showGameEndModal && game.winner_id && (
                 <GameEndModal
-                    game={currentGame}
+                    game={game}
                     currentPlayer={currentPlayer}
-                    winner={currentGame.players.find(p => p.user_id === currentGame.winner_id)}
-                    onClose={() => { }} // No-op since visibility is derived from currentGame.winner_id
-                    onLeaveGame={() => leaveGame(user.id)}
+                    winner={game.players.find(p => p.user_id === game.winner_id) || { name: t('unknown'), user_id: game.winner_id }}
+                    onClose={() => setShowGameEndModal(false)}
+                    onLeaveGame={leaveGame}
                 />
             )}
         </div>

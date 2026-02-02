@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import SetUsernamePage from './pages/SetUsernamePage';
 import HomePage from './pages/HomePage';
 import GamePage from './pages/GamePage';
+import LandingPage from './pages/LandingPage';
 import './styles.css';
 
 import { useLocation } from 'react-router-dom';
@@ -79,7 +80,7 @@ function PublicRoute({ children }) {
     if (!user.name || user.name === '') {
       return <Navigate to="/set-username" replace />;
     }
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   return children;
@@ -131,6 +132,11 @@ function App() {
 
       {/* Rota Tanımlamaları */}
       <Routes>
+        {/* Landing Page Routes (SEO Friendly) */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/tr" element={<LandingPage />} />
+        <Route path="/en" element={<LandingPage />} />
+
         <Route
           path="/login"
           element={
@@ -150,7 +156,7 @@ function App() {
         />
 
         <Route
-          path="/"
+          path="/app"
           element={
             <ProtectedRoute>
               <HomePage />

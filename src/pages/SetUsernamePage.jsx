@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { User } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Kullanıcı adı belirleme sayfası.
@@ -14,6 +15,7 @@ export default function SetUsernamePage() {
     const { setUsername: updateUsername, user } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
 
     // İşlem sonrası dönülecek sayfa
     const from = location.state?.from?.pathname || '/';
@@ -26,17 +28,17 @@ export default function SetUsernamePage() {
 
         // Validasyonlar
         if (!name.trim()) {
-            toast.error('Lütfen adınızı girin');
+            toast.error(t('enter_name'));
             return;
         }
 
         if (name.length < 2) {
-            toast.error('Ad en az 2 karakter olmalıdır');
+            toast.error(t('name_min_length'));
             return;
         }
 
         if (name.length > 30) {
-            toast.error('Ad en fazla 30 karakter olabilir');
+            toast.error(t('name_max_length'));
             return;
         }
 
@@ -45,10 +47,10 @@ export default function SetUsernamePage() {
         setLoading(false);
 
         if (result.success) {
-            toast.success('Hoş geldiniz!');
+            toast.success(t('welcome_back', { name: name.trim() }));
             navigate(from);
         } else {
-            toast.error(result.error || 'Ad ayarlanamadı');
+            toast.error(result.error || t('name_set_error'));
         }
     };
 
@@ -60,10 +62,10 @@ export default function SetUsernamePage() {
                 </div>
 
                 <h1 className="username-title">
-                    {user?.name ? 'Adınızı Değiştir' : 'Adınızı Girin'}
+                    {user?.name ? t('set_name_title_change') : t('set_name_title_enter')}
                 </h1>
                 <p className="username-subtitle">
-                    Diğer oyuncular sizi bu isimle görecek
+                    {t('set_name_subtitle')}
                 </p>
 
                 <form onSubmit={handleSubmit}>
@@ -71,7 +73,7 @@ export default function SetUsernamePage() {
                         <input
                             type="text"
                             className="form-input username-input"
-                            placeholder="Adınız (örn: Gökhan)"
+                            placeholder={t('name_placeholder')}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             maxLength={30}
@@ -79,7 +81,7 @@ export default function SetUsernamePage() {
                             disabled={loading}
                         />
                         <div className="username-hint">
-                            {name.length}/30 karakter
+                            {name.length}/30
                         </div>
                     </div>
 
@@ -91,15 +93,16 @@ export default function SetUsernamePage() {
                         {loading ? (
                             <div className="spinner" style={{ width: '20px', height: '20px' }}></div>
                         ) : (
-                            user?.name ? 'Güncelle' : 'Devam Et'
+                            user?.name ? t('update') : t('continue')
                         )}
                     </button>
                 </form>
 
                 <p className="username-footer">
-                    İsterseniz daha sonra ayarlardan değiştirebilirsiniz
+                    {t('later_note')}
                 </p>
             </div>
         </div>
     );
 }
+
