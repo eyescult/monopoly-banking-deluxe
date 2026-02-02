@@ -1,8 +1,8 @@
-# 🏦 Monopoly Digital Bank
+# 🏦 Monopoly Dijital Banka
 
 > 🇬🇧 For English documentation, please [click here](README.md).
 
-> **Monopoly Digital Bank** (eski adıyla Monopoly Mobile Banking), Monopoly masa oyunları için geliştirilmiş, gerçek zamanlı ve modern bir **dijital bankacılık** uygulamasıdır. Kağıt paraları unutun, **Monopoly Mobil Bankacılık** deneyimiyle işlemlerinizi cebinizden yönetin!
+> **Monopoly Dijital Banka**, Monopoly masa oyunları için geliştirilmiş, gerçek zamanlı ve modern bir **dijital bankacılık** uygulamasıdır. Kağıt paraları unutun, **Monopoly Mobil Bankacılık** deneyimiyle işlemlerinizi cebinizden yönetin!
 
 ![Version](https://img.shields.io/badge/version-1.2.1-blue.svg?style=flat&logo=git)
 ![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)
@@ -13,7 +13,7 @@
 
 ## 🌟 Proje Hakkında
 
-**Monopoly Digital Bank**, klasik Monopoly oyunundaki kağıt para karmaşasını ortadan kaldıran, oyuncuların birbirlerine veya bankaya saniyeler içinde para transferi yapabilmesini sağlayan ücretsiz bir web uygulamasıdır. Hem **Monopoly Mobile Bank** özelliklerini taşır hem de modern arayüzüyle eşsiz bir oyun keyfi sunar.
+**Monopoly Dijital Banka**, klasik Monopoly oyunundaki kağıt para karmaşasını ortadan kaldıran, oyuncuların birbirlerine veya bankaya saniyeler içinde para transferi yapabilmesini sağlayan ücretsiz bir web uygulamasıdır. Hem **Monopoly Mobile Bank** özelliklerini taşır hem de modern arayüzüyle eşsiz bir oyun keyfi sunar.
 
 Supabase altyapısı sayesinde tüm işlemler **gerçek zamanlı (Realtime)** olarak senkronize edilir. Bir oyuncu para gönderdiğinde, karşı tarafın bakiyesi anında güncellenir. İster **Monopoly Dijital Bankacılık** deyin isterseniz elektronik banka, oyununuz artık çok daha hızlı!
 
