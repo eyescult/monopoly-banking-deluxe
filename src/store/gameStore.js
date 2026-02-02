@@ -26,6 +26,7 @@ export const useGameStore = create((set, get) => ({
     realtimeChannel: null,  // Supabase realtime kanal referansı
     isPageVisible: true,    // Sayfa görünürlük durumu (ekran açık/kapalı)
     isReconnecting: false,  // Yeniden bağlanma durumu
+    lastUpdate: Date.now(), // Son veri güncelleme zamanı (Heartbeat/Zombi kontrolü için)
     pendingTransactions: [], // Ekran kapandığında bekleyen işlemler
 
     /**
@@ -209,9 +210,9 @@ export const useGameStore = create((set, get) => ({
                 },
                 (payload) => {
                     if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-                        set({ currentGame: payload.new });
+                        set({ currentGame: payload.new, lastUpdate: Date.now() });
                     } else if (payload.eventType === 'DELETE') {
-                        set({ currentGame: null });
+                        set({ currentGame: null, lastUpdate: Date.now() });
                     }
                 }
             )
@@ -250,7 +251,7 @@ export const useGameStore = create((set, get) => ({
                 .single();
 
             if (!error && data) {
-                set({ currentGame: data });
+                set({ currentGame: data, lastUpdate: Date.now() });
             }
         } catch (err) {
             console.error('[GameStore] Failed to refresh game data:', err);

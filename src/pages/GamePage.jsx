@@ -75,7 +75,20 @@ export default function GamePage() {
                 useGameStore.getState().setPageVisibility(isVisible);
 
                 if (isVisible) {
-                    console.log('[Visibility] Page became visible, reconnecting...');
+                    console.log('[Visibility] Page became visible, checking connection health...');
+
+                    // NÜKLEER SEÇENEK: Eğer son veriden bu yana 30 saniyeden fazla geçmişse
+                    // ve sayfa yeni görünür olduysa, zombi bağlantı riskine karşı sayfayı yenile.
+                    const lastUpdate = useGameStore.getState().lastUpdate;
+                    const timeDiff = Date.now() - lastUpdate;
+
+                    if (timeDiff > 30000) { // 30 saniye
+                        console.warn(`[Visibility] Data is stale by ${timeDiff}ms. Forcing hard reload...`);
+                        window.location.reload();
+                        return;
+                    }
+
+                    console.log('[Visibility] Connection seems fresh enough, reconnecting channel...');
                     // Supabase bağlantısını ve veriyi yenile
                     useGameStore.getState().reconnectChannel();
                 }
