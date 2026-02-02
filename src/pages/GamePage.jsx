@@ -270,6 +270,19 @@ export default function GamePage() {
         }
 
         if (type === 'fromSalary') {
+            // Eğer bağlantı tazeleniyorsa kullanıcıya bilgi ver ve işlemi durdur
+            if (isReconnecting) {
+                toast('Bağlantı yenileniyor, lütfen bekleyin...', {
+                    icon: '🔄',
+                    style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                    },
+                });
+                return;
+            }
+
             const loadingToast = toast.loading('Maaş yatırılıyor...');
 
             try {
@@ -282,6 +295,7 @@ export default function GamePage() {
                         toUserId: user.id
                     }),
                     new Promise((_, reject) =>
+                        // 35 saniye bekle
                         setTimeout(() => reject(new Error('TIMEOUT')), 35000)
                     )
                 ]);
@@ -295,7 +309,11 @@ export default function GamePage() {
             } catch (err) {
                 toast.dismiss(loadingToast);
                 if (err.message === 'TIMEOUT') {
-                    toast.error('İşlem zaman aşımına uğradı. Lütfen tekrar deneyin.', {
+                    // Bağlantı hatası varsayımıyla yenilemeyi tetikle
+                    console.log('[GamePage] Transaction timed out, forcing reconnection...');
+                    useGameStore.getState().reconnectChannel();
+
+                    toast.error('Bağlantı zaman aşımı. Otomatik yenileniyor...', {
                         id: 'salary-timeout',
                         duration: 5000
                     });

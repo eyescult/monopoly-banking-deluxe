@@ -263,24 +263,52 @@ export const useGameStore = create((set, get) => ({
      */
     reconnectChannel: async () => {
         const gameId = get().currentGameId;
-        if (!gameId) return;
+        if (!gameId || get().isReconnecting) return;
 
-        set({ isReconnecting: true }); // Yeniden bağlanma başladı
-        console.log('[Realtime] Reconnecting and refreshing data...');
+        console.log('[Connection] Screen unlocked, checking network...');
+        set({ isReconnecting: true });
+
+        // 1. ÖNEMLİ: İşletim sisteminin ağı uyandırması için 1 saniye bekle
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         try {
+            // 2. Heartbeat: Supabase ile gerçekten konuşabiliyor muyuz? (Küçük bir sorgu)
+            const { error } = await supabase.from('games').select('id').eq('id', gameId).single();
+
+            if (error) throw error;
+
+            // 3. Bağlantı sağlamsa kanalları tazele
+            console.log('[Connection] Network is alive, refreshing subscriptions...');
             // Mevcut kanalı kapatıp sıfırdan abonelik başlat (Zombi bağlantıları temizler)
             get().subscribeToGame(gameId);
-
-            // Veriyi tazece çek
             await get().refreshGameData(gameId);
 
-            // Ağın stabilize olması için kısa bir bekleme
-            await new Promise(resolve => setTimeout(resolve, 500));
         } catch (err) {
-            console.error('[Realtime] Reconnection failed:', err);
+            console.error('[Connection] Heartbeat failed, retrying in 2s...', err);
+            // Eğer başarısız olursa 2 saniye sonra bir kez daha dene
+            // Not: Recursive çağrı yerine basitçe fonksiyonun bitmesine izin veriyoruz, 
+            // kullanıcı tekrar denerse veya visibility toggle olursa tekrar tetiklenir.
+            // Ancak otomatik deneme isteniyorsa:
+            setTimeout(() => {
+                // isReconnecting'i false yapıp tekrar dene ki kilit takılı kalmasın
+                set({ isReconnecting: false });
+                get().reconnectChannel();
+            }, 2000);
+            return; // Finally bloğu çalışmadan çıkmaması için return koymuyoruz ama
+            // setTimeout asenkron olduğu için finally önce çalışır.
+            // Bu yüzden yukarıdaki setTimeout içindeki set({isReconnecting: false}) önemli değil,
+            // çünkü finally zaten false yapacak. 
+            // Ama retryLogic için `isReconnecting` check'ini geçmesi lazım.
+            // O yüzden setTimeout içinde çağırmadan önce flag'i yönetmek lazım.
+            // Düzeltme: finally her durumda çalışır. Retry'ı finally sonrasına saklamak zor.
+            // En temiz yöntem:
         } finally {
-            set({ isReconnecting: false }); // İşlem bitti
+            // Eğer hata alıp retry planladıysak isReconnecting'i kapatmamalıyız ki butonlar kapalı kalsın?
+            // Hayır, retry 2 saniye sonra. O arada kullanıcıya kontrolü verebiliriz veya "Bağlanıyor" demeye devam edebiliriz.
+            // Kullanıcı deneyimi için: Hata aldıysak "Bağlanamadı" durumuna düşer. 
+            // Ancak kodda setTimeout var. 
+            // Basit çözüm: always false yap. Retry gelince tekrar true olur.
+            set({ isReconnecting: false });
         }
     },
 
