@@ -20,6 +20,7 @@ export default function GamePage() {
     const { user } = useAuthStore();
     const { currentGame, subscribeToGame, leaveGame, startGame, joinGame, cleanup, makeTransaction, kickPlayer, disbandGame } = useGameStore();
 
+
     // UI States
     const [modalConfig, setModalConfig] = useState(null);
 
@@ -47,6 +48,9 @@ export default function GamePage() {
         let isMounted = true;
 
         if (gameId) {
+            // İlk yüklemede görünürlük durumunu ayarla
+            useGameStore.getState().setPageVisibility(document.visibilityState === 'visible');
+
             subscribeToGame(gameId);
 
             // 5 saniye içinde oyun verisi gelmezse hata ver ve geri dön
@@ -65,7 +69,12 @@ export default function GamePage() {
              * Bu, telefon ekranı kapandığında WebSocket'in kopması sorununu çözer.
              */
             const handleVisibilityChange = () => {
-                if (document.visibilityState === 'visible') {
+                const isVisible = document.visibilityState === 'visible';
+
+                // Store'a görünürlük durumunu bildir
+                useGameStore.getState().setPageVisibility(isVisible);
+
+                if (isVisible) {
                     console.log('[Visibility] Page became visible, reconnecting...');
                     // Supabase bağlantısını ve veriyi yenile
                     useGameStore.getState().reconnectChannel();
@@ -288,6 +297,11 @@ export default function GamePage() {
                 if (err.message === 'TIMEOUT') {
                     toast.error('İşlem zaman aşımına uğradı. Lütfen tekrar deneyin.', {
                         id: 'salary-timeout',
+                        duration: 5000
+                    });
+                } else if (err.message === 'QUEUE_TIMEOUT') {
+                    toast.error('İşlem çok uzun süre bekledi. Lütfen tekrar deneyin.', {
+                        id: 'salary-queue-timeout',
                         duration: 5000
                     });
                 } else {

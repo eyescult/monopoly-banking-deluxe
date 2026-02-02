@@ -131,6 +131,11 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                     id: 'tx-timeout',
                     duration: 5000
                 });
+            } else if (err.message === 'QUEUE_TIMEOUT') {
+                toast.error('İşlem çok uzun süre bekledi. Lütfen tekrar deneyin.', {
+                    id: 'tx-queue-timeout',
+                    duration: 5000
+                });
             } else {
                 toast.error(`Beklenmeyen hata: ${err.message}`);
             }

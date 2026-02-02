@@ -24,6 +24,8 @@ export const useGameStore = create((set, get) => ({
     games: [],              // (Kullanılmıyor olabilir, genel oyun listesi için)
     loading: false,          // İşlem yüklenme durumu
     realtimeChannel: null,  // Supabase realtime kanal referansı
+    isPageVisible: true,    // Sayfa görünürlük durumu (ekran açık/kapalı)
+    pendingTransactions: [], // Ekran kapandığında bekleyen işlemler
 
     /**
      * Rastgele 4 haneli benzersiz oyun ID'si üretir.
@@ -284,6 +286,54 @@ export const useGameStore = create((set, get) => ({
     },
 
     /**
+     * Sayfa görünürlük durumunu ayarlar.
+     * Ekran kapandığında işlemleri durdurur, açıldığında devam ettirir.
+     */
+    setPageVisibility: (isVisible) => {
+        set({ isPageVisible: isVisible });
+
+        if (isVisible) {
+            // Ekran açıldı - bekleyen işlemleri işle
+            console.log('[Visibility] Page visible, processing pending transactions...');
+            get().processPendingTransactions();
+        } else {
+            console.log('[Visibility] Page hidden, transactions will queue');
+        }
+    },
+
+    /**
+     * Bekleyen işlemleri sırayla işler.
+     * Ekran açıldıktan sonra çağrılır.
+     */
+    processPendingTransactions: async () => {
+        const pending = get().pendingTransactions;
+        if (pending.length === 0) return;
+
+        console.log(`[Transaction Queue] Processing ${pending.length} pending transaction(s)...`);
+
+        // İşlemleri sırayla işle
+        for (const txData of pending) {
+            try {
+                const result = await get().makeTransaction(txData.params);
+
+                if (result.success) {
+                    // Başarılı callback'i çağır
+                    txData.onSuccess?.(result);
+                } else {
+                    // Hata callback'i çağır
+                    txData.onError?.(result.error || 'İşlem başarısız');
+                }
+            } catch (err) {
+                console.error('[Transaction Queue] Failed to process pending transaction:', err);
+                txData.onError?.(err.message);
+            }
+        }
+
+        // Kuyruğu temizle
+        set({ pendingTransactions: [] });
+    },
+
+    /**
      * Mevcut oyunu terk eder.
      */
     leaveGame: async (userId) => {
@@ -353,8 +403,50 @@ export const useGameStore = create((set, get) => ({
     /**
      * Para transfer işlemlerini gerçekleştirir.
      * Banka, Ücretsiz Otopark ve Oyuncular arası transferleri yönetir.
+     * Sayfa gizli ise işlemi sıraya alır.
      */
     makeTransaction: async ({ gameId, type, amount, fromUserId = null, toUserId = null }) => {
+        // Eğer sayfa gizli ise işlemi kuyruğa al
+        const isVisible = get().isPageVisible;
+
+        if (!isVisible) {
+            console.log('[Transaction] Page is hidden, queueing transaction...');
+
+            // Kuyruğa ekle, ancak uzun süre beklemezse timeout ile reject et
+            return new Promise((resolve, reject) => {
+                const pending = get().pendingTransactions;
+                const queueTime = Date.now();
+
+                set({
+                    pendingTransactions: [
+                        ...pending,
+                        {
+                            params: { gameId, type, amount, fromUserId, toUserId },
+                            queuedAt: queueTime,
+                            onSuccess: resolve,
+                            onError: (error) => reject(new Error(error))
+                        }
+                    ]
+                });
+
+                console.log('[Transaction] Transaction queued, will process when page becomes visible');
+
+                // 30 saniye içinde işlem yapılmazsa timeout
+                setTimeout(() => {
+                    const currentPending = get().pendingTransactions;
+                    const stillPending = currentPending.find(t => t.queuedAt === queueTime);
+
+                    if (stillPending) {
+                        // Hala kuyrukta - timeout
+                        set({
+                            pendingTransactions: currentPending.filter(t => t.queuedAt !== queueTime)
+                        });
+                        reject(new Error('QUEUE_TIMEOUT'));
+                    }
+                }, 30000);
+            });
+        }
+
         try {
             const { data: game, error: fetchError } = await supabase
                 .from('games')
