@@ -404,13 +404,14 @@ export const useGameStore = create((set, get) => ({
      * Para transfer işlemlerini gerçekleştirir.
      * Banka, Ücretsiz Otopark ve Oyuncular arası transferleri yönetir.
      * Sayfa gizli ise işlemi sıraya alır.
+     * Ağ hatalarına karşı retry mekanizması içerir.
      */
     makeTransaction: async ({ gameId, type, amount, fromUserId = null, toUserId = null }) => {
-        // Eğer sayfa gizli ise işlemi kuyruğa al
-        const isVisible = get().isPageVisible;
+        // Direkt DOM kontrolü yap (Store state'i gecikebilir)
+        const isHidden = document.visibilityState === 'hidden';
 
-        if (!isVisible) {
-            console.log('[Transaction] Page is hidden, queueing transaction...');
+        if (isHidden) {
+            console.log('[Transaction] Page is hidden (DOM check), queueing transaction...');
 
             // Kuyruğa ekle, ancak uzun süre beklemezse timeout ile reject et
             return new Promise((resolve, reject) => {
@@ -447,149 +448,150 @@ export const useGameStore = create((set, get) => ({
             });
         }
 
-        try {
-            const { data: game, error: fetchError } = await supabase
-                .from('games')
-                .select('*')
-                .eq('id', gameId)
-                .single();
+        // Retry mekanizması ile işlemi dene
+        let attempt = 0;
+        const maxRetries = 3;
 
-            if (fetchError || !game) {
-                throw new Error('Oyun bulunamadı');
-            }
+        while (attempt < maxRetries) {
+            try {
+                attempt++;
+                if (attempt > 1) console.log(`[Transaction] Retry attempt ${attempt}/${maxRetries}...`);
 
-            // İflas kontrolü: İflas eden kullanıcı işlem yapamaz
-            if (fromUserId) {
-                const fromPlayer = game.players.find(p => p.user_id === fromUserId);
-                if (fromPlayer?.bankrupt_timestamp) {
-                    throw new Error('İflas eden oyuncu para gönderemez');
+                const { data: game, error: fetchError } = await supabase
+                    .from('games')
+                    .select('*')
+                    .eq('id', gameId)
+                    .single();
+
+                if (fetchError || !game) {
+                    throw new Error('Oyun bulunamadı');
                 }
-            }
 
-            if (toUserId) {
-                const toPlayer = game.players.find(p => p.user_id === toUserId);
-                if (toPlayer?.bankrupt_timestamp) {
-                    throw new Error('İflas eden oyuncuya para gönderilemez');
+                // İflas kontrolü
+                if (fromUserId) {
+                    const fromPlayer = game.players.find(p => p.user_id === fromUserId);
+                    if (fromPlayer?.bankrupt_timestamp) {
+                        throw new Error('İflas eden oyuncu para gönderemez');
+                    }
                 }
-            }
 
-            const timestamp = new Date().toISOString();
-            let updatedPlayers = [...game.players];
-            let updatedFreeParkingMoney = game.free_parking_money;
-
-            // İşlem tipine göre bakiyeleri güncelle
-            switch (type) {
-                case 'fromBank': // Bankadan oyuncuya
-                    if (!toUserId) throw new Error('Alıcı belirtilmedi');
-                    updatedPlayers = updatedPlayers.map(p =>
-                        p.user_id === toUserId
-                            ? { ...p, balance: p.balance + amount }
-                            : p
-                    );
-                    break;
-
-                case 'toBank': // Oyuncudan bankaya
-                    if (!fromUserId) throw new Error('Gönderen belirtilmedi');
-                    updatedPlayers = updatedPlayers.map(p =>
-                        p.user_id === fromUserId
-                            ? { ...p, balance: p.balance - amount }
-                            : p
-                    );
-                    break;
-
-                case 'toPlayer': // Oyuncudan oyuncuya
-                    if (!fromUserId || !toUserId) throw new Error('Gönderen veya alıcı belirtilmedi');
-                    updatedPlayers = updatedPlayers.map(p => {
-                        if (p.user_id === fromUserId) {
-                            return { ...p, balance: p.balance - amount };
-                        } else if (p.user_id === toUserId) {
-                            return { ...p, balance: p.balance + amount };
-                        }
-                        return p;
-                    });
-                    break;
-
-                case 'toFreeParking': // Oyuncudan Ücretsiz Otopark'a
-                    if (!fromUserId) throw new Error('Gönderen belirtilmedi');
-                    updatedPlayers = updatedPlayers.map(p =>
-                        p.user_id === fromUserId
-                            ? { ...p, balance: p.balance - amount }
-                            : p
-                    );
-                    updatedFreeParkingMoney += amount;
-                    break;
-
-                case 'fromFreeParking': // Ücretsiz Otopark'tan oyuncuya
-                    if (!toUserId) throw new Error('Alıcı belirtilmedi');
-                    updatedPlayers = updatedPlayers.map(p =>
-                        p.user_id === toUserId
-                            ? { ...p, balance: p.balance + updatedFreeParkingMoney }
-                            : p
-                    );
-                    updatedFreeParkingMoney = 0;
-                    break;
-
-                case 'fromSalary': // Maaş ödemesi
-                    if (!toUserId) throw new Error('Alıcı belirtilmedi');
-                    updatedPlayers = updatedPlayers.map(p =>
-                        p.user_id === toUserId
-                            ? { ...p, balance: p.balance + game.salary }
-                            : p
-                    );
-                    break;
-
-                default:
-                    throw new Error('Geçersiz işlem tipi');
-            }
-
-            // İflas kontrolü
-            updatedPlayers = updatedPlayers.map(p => {
-                if (p.balance <= 0 && !p.bankrupt_timestamp) {
-                    return { ...p, bankrupt_timestamp: timestamp };
+                if (toUserId) {
+                    const toPlayer = game.players.find(p => p.user_id === toUserId);
+                    if (toPlayer?.bankrupt_timestamp) {
+                        throw new Error('İflas eden oyuncuya para gönderilemez');
+                    }
                 }
-                return p;
-            });
 
-            // İşlem geçmişine ekle
-            const transaction = {
-                from_user_id: fromUserId || null,
-                to_user_id: toUserId || null,
-                amount: type === 'fromFreeParking' ? game.free_parking_money : amount,
-                timestamp,
-                type
-            };
+                const timestamp = new Date().toISOString();
+                let updatedPlayers = [...game.players];
+                let updatedFreeParkingMoney = game.free_parking_money;
 
-            const updatedHistory = [transaction, ...(game.transaction_history || [])];
+                // İşlem tipine göre bakiyeleri güncelle
+                switch (type) {
+                    case 'fromBank':
+                        if (!toUserId) throw new Error('Alıcı belirtilmedi');
+                        updatedPlayers = updatedPlayers.map(p =>
+                            p.user_id === toUserId ? { ...p, balance: p.balance + amount } : p
+                        );
+                        break;
+                    case 'toBank':
+                        if (!fromUserId) throw new Error('Gönderen belirtilmedi');
+                        updatedPlayers = updatedPlayers.map(p =>
+                            p.user_id === fromUserId ? { ...p, balance: p.balance - amount } : p
+                        );
+                        break;
+                    case 'toPlayer':
+                        if (!fromUserId || !toUserId) throw new Error('Gönderen veya alıcı belirtilmedi');
+                        updatedPlayers = updatedPlayers.map(p => {
+                            if (p.user_id === fromUserId) return { ...p, balance: p.balance - amount };
+                            else if (p.user_id === toUserId) return { ...p, balance: p.balance + amount };
+                            return p;
+                        });
+                        break;
+                    case 'toFreeParking':
+                        if (!fromUserId) throw new Error('Gönderen belirtilmedi');
+                        updatedPlayers = updatedPlayers.map(p =>
+                            p.user_id === fromUserId ? { ...p, balance: p.balance - amount } : p
+                        );
+                        updatedFreeParkingMoney += amount;
+                        break;
+                    case 'fromFreeParking':
+                        if (!toUserId) throw new Error('Alıcı belirtilmedi');
+                        updatedPlayers = updatedPlayers.map(p =>
+                            p.user_id === toUserId ? { ...p, balance: p.balance + updatedFreeParkingMoney } : p
+                        );
+                        updatedFreeParkingMoney = 0;
+                        break;
+                    case 'fromSalary':
+                        if (!toUserId) throw new Error('Alıcı belirtilmedi');
+                        updatedPlayers = updatedPlayers.map(p =>
+                            p.user_id === toUserId ? { ...p, balance: p.balance + game.salary } : p
+                        );
+                        break;
+                    default:
+                        throw new Error('Geçersiz işlem tipi');
+                }
 
-            // Kazanan kontrolü
-            const nonBankruptPlayers = updatedPlayers.filter(p => !p.bankrupt_timestamp);
-            let winnerId = game.winner_id;
-            let endingTimestamp = game.ending_timestamp;
+                // İflas ve Kazanan Kontrolleri (Aynı mantık)
+                updatedPlayers = updatedPlayers.map(p => {
+                    if (p.balance <= 0 && !p.bankrupt_timestamp) {
+                        return { ...p, bankrupt_timestamp: timestamp };
+                    }
+                    return p;
+                });
 
-            if (nonBankruptPlayers.length === 1 && updatedPlayers.length > 1 && !winnerId) {
-                winnerId = nonBankruptPlayers[0].user_id;
-                endingTimestamp = timestamp;
+                const transaction = {
+                    from_user_id: fromUserId || null,
+                    to_user_id: toUserId || null,
+                    amount: type === 'fromFreeParking' ? game.free_parking_money : amount,
+                    timestamp,
+                    type
+                };
+
+                const updatedHistory = [transaction, ...(game.transaction_history || [])];
+
+                const nonBankruptPlayers = updatedPlayers.filter(p => !p.bankrupt_timestamp);
+                let winnerId = game.winner_id;
+                let endingTimestamp = game.ending_timestamp;
+
+                if (nonBankruptPlayers.length === 1 && updatedPlayers.length > 1 && !winnerId) {
+                    winnerId = nonBankruptPlayers[0].user_id;
+                    endingTimestamp = timestamp;
+                }
+
+                // Veritabanı güncelleme
+                const { error: updateError } = await supabase
+                    .from('games')
+                    .update({
+                        players: updatedPlayers,
+                        transaction_history: updatedHistory,
+                        free_parking_money: updatedFreeParkingMoney,
+                        winner_id: winnerId,
+                        ending_timestamp: endingTimestamp
+                    })
+                    .eq('id', gameId);
+
+                if (updateError) throw updateError;
+
+                return { success: true };
+
+            } catch (error) {
+                console.error(`Make transaction attempt ${attempt} failed:`, error);
+
+                // Son deneme ise veya kritik mantık hatası ise hata döndür
+                // (Mantık hatalarını retry etme, sadece network/db hatalarını et)
+                const isLogicError = error.message.includes('bulunamadı') || error.message.includes('belirtilmedi') || error.message.includes('İflas') || error.message.includes('Geçersiz');
+
+                if (attempt === maxRetries || isLogicError) {
+                    return { success: false, error: error.message };
+                }
+
+                // Retry öncesi bekle (backoff strategies)
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
             }
-
-            // Veritabanını komple güncelle
-            const { error: updateError } = await supabase
-                .from('games')
-                .update({
-                    players: updatedPlayers,
-                    transaction_history: updatedHistory,
-                    free_parking_money: updatedFreeParkingMoney,
-                    winner_id: winnerId,
-                    ending_timestamp: endingTimestamp
-                })
-                .eq('id', gameId);
-
-            if (updateError) throw updateError;
-
-            return { success: true };
-        } catch (error) {
-            console.error('Make transaction error:', error);
-            return { success: false, error: error.message };
         }
+
+        return { success: false, error: 'Maksimum deneme sayısına ulaşıldı' };
     },
 
     /**

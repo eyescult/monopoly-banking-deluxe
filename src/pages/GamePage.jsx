@@ -282,7 +282,7 @@ export default function GamePage() {
                         toUserId: user.id
                     }),
                     new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('TIMEOUT')), 15000)
+                        setTimeout(() => reject(new Error('TIMEOUT')), 25000)
                     )
                 ]);
 
