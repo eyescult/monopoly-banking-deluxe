@@ -49,6 +49,7 @@ const LandingPage = () => {
                 <meta property="og:description" content={isTurkish ? 'Arkadaşlarınızla Monopoly oynarken parayı dijital yönetin.' : 'Manage money digitally while playing Monopoly with friends.'} />
                 <meta property="og:type" content="website" />
                 <meta name="robots" content="index, follow" />
+                <meta name="google-site-verification" content="Fer3arlmkb0QuXaZJeA9gWnEz7XtsjSraMlQEBF8D8g" />
                 <html lang={currentLang} />
             </Helmet>
 
