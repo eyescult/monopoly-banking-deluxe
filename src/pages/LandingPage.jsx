@@ -109,7 +109,7 @@ const LandingPage = () => {
                         </div>
 
                         <button onClick={handlePlayNow} className="lp-btn-primary" style={{ padding: '0.75rem 1.5rem', fontSize: '0.875rem' }}>
-                            {isTurkish ? 'Giriş Yap' : 'Login'}
+                            {isTurkish ? 'Hemen Oyna' : 'Play Now'}
                         </button>
                     </div>
                 </div>
@@ -119,10 +119,6 @@ const LandingPage = () => {
             <main>
                 <div className="lp-container">
                     <section className="lp-hero">
-                        <div className="lp-badge animate-up delay-1">
-                            <Zap size={14} fill="currentColor" />
-                            {isTurkish ? 'V 1.3.0 - ARTIK DAHA HIZLI' : 'V 1.3.0 - NOW FASTER'}
-                        </div>
 
                         <h1 className="lp-title animate-up delay-2">
                             {isTurkish ? (
@@ -142,9 +138,6 @@ const LandingPage = () => {
                             <button onClick={handlePlayNow} className="lp-btn-primary flex items-center gap-3">
                                 <Play size={20} fill="currentColor" />
                                 {isTurkish ? 'Hemen Oyna' : 'Play Now'}
-                            </button>
-                            <button onClick={handlePlayNow} className="lp-btn-secondary">
-                                {isTurkish ? 'Giriş Yap' : 'Login'}
                             </button>
                         </div>
 
