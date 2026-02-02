@@ -25,6 +25,7 @@ export const useGameStore = create((set, get) => ({
     loading: false,          // İşlem yüklenme durumu
     realtimeChannel: null,  // Supabase realtime kanal referansı
     isPageVisible: true,    // Sayfa görünürlük durumu (ekran açık/kapalı)
+    isReconnecting: false,  // Yeniden bağlanma durumu
     pendingTransactions: [], // Ekran kapandığında bekleyen işlemler
 
     /**
@@ -260,28 +261,26 @@ export const useGameStore = create((set, get) => ({
      * Realtime kanalını yeniden bağlar.
      * Ekran açıldığında veya bağlantı koptuğunda çağrılır.
      */
-    reconnectChannel: () => {
+    reconnectChannel: async () => {
         const gameId = get().currentGameId;
-        const channel = get().realtimeChannel;
-
         if (!gameId) return;
 
-        // Kanal durumunu kontrol et
-        if (channel) {
-            const state = channel.state;
-            console.log(`[Realtime] Current channel state: ${state}`);
+        set({ isReconnecting: true }); // Yeniden bağlanma başladı
+        console.log('[Realtime] Reconnecting and refreshing data...');
 
-            // Eğer kanal aktif değilse yeniden abone ol
-            if (state !== 'joined') {
-                console.log('[Realtime] Reconnecting to channel...');
-                get().subscribeToGame(gameId);
-            } else {
-                // Kanal aktif, sadece veriyi yenile
-                get().refreshGameData(gameId);
-            }
-        } else {
-            // Kanal yok, yeniden oluştur
+        try {
+            // Mevcut kanalı kapatıp sıfırdan abonelik başlat (Zombi bağlantıları temizler)
             get().subscribeToGame(gameId);
+
+            // Veriyi tazece çek
+            await get().refreshGameData(gameId);
+
+            // Ağın stabilize olması için kısa bir bekleme
+            await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (err) {
+            console.error('[Realtime] Reconnection failed:', err);
+        } finally {
+            set({ isReconnecting: false }); // İşlem bitti
         }
     },
 
@@ -409,9 +408,11 @@ export const useGameStore = create((set, get) => ({
     makeTransaction: async ({ gameId, type, amount, fromUserId = null, toUserId = null }) => {
         // Direkt DOM kontrolü yap (Store state'i gecikebilir)
         const isHidden = document.visibilityState === 'hidden';
+        const isReconnecting = get().isReconnecting;
 
-        if (isHidden) {
-            console.log('[Transaction] Page is hidden (DOM check), queueing transaction...');
+        if (isHidden || isReconnecting) {
+            const reason = isHidden ? 'Page is hidden' : 'Reconnecting';
+            console.log(`[Transaction] ${reason}, queueing transaction...`);
 
             // Kuyruğa ekle, ancak uzun süre beklemezse timeout ile reject et
             return new Promise((resolve, reject) => {

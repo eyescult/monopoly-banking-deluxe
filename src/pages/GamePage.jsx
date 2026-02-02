@@ -18,7 +18,7 @@ export default function GamePage() {
     const { gameId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const { currentGame, subscribeToGame, leaveGame, startGame, joinGame, cleanup, makeTransaction, kickPlayer, disbandGame } = useGameStore();
+    const { currentGame, subscribeToGame, leaveGame, startGame, joinGame, cleanup, makeTransaction, kickPlayer, disbandGame, isReconnecting } = useGameStore();
 
 
     // UI States
@@ -282,7 +282,7 @@ export default function GamePage() {
                         toUserId: user.id
                     }),
                     new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('TIMEOUT')), 25000)
+                        setTimeout(() => reject(new Error('TIMEOUT')), 35000)
                     )
                 ]);
 
@@ -448,11 +448,11 @@ export default function GamePage() {
                             <button
                                 className="action-item"
                                 onClick={() => openTransactionModal('toPlayer', player.user_id)}
-                                disabled={player.bankrupt_timestamp !== null || isBankrupt}
+                                disabled={player.bankrupt_timestamp !== null || isBankrupt || isReconnecting}
                                 style={{
                                     width: '100%',
                                     marginBottom: 0,
-                                    ...((player.bankrupt_timestamp || isBankrupt) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
+                                    ...((player.bankrupt_timestamp || isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
                                 }}
                             >
                                 <div className="player-info">
@@ -505,8 +505,8 @@ export default function GamePage() {
                     <button
                         className="action-item"
                         onClick={() => openTransactionModal('toBank')}
-                        disabled={isBankrupt}
-                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        disabled={isBankrupt || isReconnecting}
+                        style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                         <div className="player-info">
                             <div className="player-avatar bank-avatar"><Building2 size={20} color="white" /></div>
@@ -517,8 +517,8 @@ export default function GamePage() {
                         <button
                             className="action-item"
                             onClick={() => openTransactionModal('toFreeParking')}
-                            disabled={isBankrupt}
-                            style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                            disabled={isBankrupt || isReconnecting}
+                            style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                         >
                             <div className="player-info">
                                 <div className="player-avatar parking-avatar"><Car size={20} color="white" /></div>
@@ -538,30 +538,30 @@ export default function GamePage() {
                     <button
                         className="grid-btn"
                         onClick={() => openTransactionModal('fromBank')}
-                        disabled={isBankrupt}
-                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        disabled={isBankrupt || isReconnecting}
+                        style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
-                        <Building2 size={24} />
-                        <span>Banka</span>
+                        {isReconnecting ? <div className="spinner-small"></div> : <Building2 size={24} />}
+                        <span>{isReconnecting ? 'Bağlanıyor...' : 'Banka'}</span>
                     </button>
                     <button
                         className="grid-btn"
                         onClick={() => openTransactionModal('fromSalary')}
-                        disabled={isBankrupt}
-                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        disabled={isBankrupt || isReconnecting}
+                        style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
-                        <Wallet size={24} />
-                        <span>Maaş</span>
+                        {isReconnecting ? <div className="spinner-small"></div> : <Wallet size={24} />}
+                        <span>{isReconnecting ? 'Bağlanıyor...' : 'Maaş'}</span>
                     </button>
                     {currentGame.enable_free_parking && (
                         <button
                             className="grid-btn"
                             onClick={() => openTransactionModal('fromFreeParking')}
-                            disabled={isBankrupt}
-                            style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                            disabled={isBankrupt || isReconnecting}
+                            style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                         >
-                            <Car size={24} />
-                            <span>Otopark</span>
+                            {isReconnecting ? <div className="spinner-small"></div> : <Car size={24} />}
+                            <span>{isReconnecting ? 'Bağlanıyor...' : 'Otopark'}</span>
                         </button>
                     )}
                 </div>
