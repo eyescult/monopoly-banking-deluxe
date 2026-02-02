@@ -63,13 +63,13 @@ const LandingPage = () => {
     return (
         <div className="lp-wrapper">
             <Helmet>
-                <title>{isTurkish ? 'Monopoly Dijital Banka' : 'Monopoly Digital Bank'}</title>
+                <title>{isTurkish ? 'Monopoly Dijital Bankacılık' : 'Monopoly Digital Banking'}</title>
                 <meta name="description" content={isTurkish
                     ? "Monopoly oyunlarınızı dijitalleştirin! Kağıt paraları unutun, hızlı ve güvenli para transferi ile oyun keyfini katlayın. Ücretsiz hemen başlayın."
                     : "Digitize your Monopoly games! Forget paper money, enjoy fast and secure money transfers. Start for free now."}
                 />
                 <link rel="canonical" href={`https://monopoly-app.com${location.pathname === '/' ? '' : location.pathname}`} />
-                <meta property="og:title" content={isTurkish ? 'Monopoly Dijital Banka' : 'Monopoly Digital Bank'} />
+                <meta property="og:title" content={isTurkish ? 'Monopoly Dijital Bankacılık' : 'Monopoly Digital Banking'} />
                 <meta property="og:description" content={isTurkish ? 'Arkadaşlarınızla Monopoly oynarken parayı dijital yönetin.' : 'Manage money digitally while playing Monopoly with friends.'} />
                 <meta property="og:type" content="website" />
                 <meta name="robots" content="index, follow" />
@@ -84,8 +84,8 @@ const LandingPage = () => {
             <nav className="lp-nav">
                 <div className="lp-container">
                     <Link to={isTurkish ? "/tr" : "/en"} className="lp-logo">
-                        <img src={logo} alt="Monopoly Bank" className="lp-logo-img lp-logo-light" />
-                        <img src={logoDark} alt="Monopoly Bank" className="lp-logo-img lp-logo-dark" />
+                        <img src={logo} alt="Monopoly Digital Banking" className="lp-logo-img lp-logo-light" />
+                        <img src={logoDark} alt="Monopoly Digital Banking" className="lp-logo-img lp-logo-dark" />
                     </Link>
 
                     <div className="lp-nav-actions">
@@ -171,8 +171,8 @@ const LandingPage = () => {
                 <div className="lp-footer-content">
                     <div className="lp-footer-left">
                         <Link to={isTurkish ? "/tr" : "/en"} className="lp-logo">
-                            <img src={logo} alt="Monopoly Bank" className="lp-logo-img lp-logo-light" style={{ height: '24px' }} />
-                            <img src={logoDark} alt="Monopoly Bank" className="lp-logo-img lp-logo-dark" style={{ height: '24px' }} />
+                            <img src={logo} alt="Monopoly Digital Banking" className="lp-logo-img lp-logo-light" style={{ height: '24px' }} />
+                            <img src={logoDark} alt="Monopoly Digital Banking" className="lp-logo-img lp-logo-dark" style={{ height: '24px' }} />
                         </Link>
                         <p className="lp-copyright">
                             © 2025. {isTurkish ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}

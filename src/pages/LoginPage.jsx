@@ -127,8 +127,8 @@ export default function LoginPage() {
 
             <div className="login-container fade-in">
                 <div className="login-logo">
-                    <img src={logo} alt="Monopoly Digital Bank" className="app-logo light-mode-logo" />
-                    <img src={logoDark} alt="Monopoly Digital Bank" className="app-logo dark-mode-logo" />
+                    <img src={logo} alt="Monopoly Digital Banking" className="app-logo light-mode-logo" />
+                    <img src={logoDark} alt="Monopoly Digital Banking" className="app-logo dark-mode-logo" />
                 </div>
 
                 <p className="login-subtitle">

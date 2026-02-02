@@ -1,9 +1,9 @@
-# 🏦 Monopoly Dijital Banka
+# 🏦 Monopoly Dijital Bankacılık
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-yellow.svg?style=flat-square&logo=buy-me-a-coffee)](https://buymeacoffee.com/tnyligokhan)
 
 > 🇬🇧 For English documentation, please [click here](README.md).
 
-> **Monopoly Dijital Banka**, Monopoly masa oyunları için geliştirilmiş, gerçek zamanlı ve modern bir **dijital bankacılık** uygulamasıdır. Kağıt paraları unutun, **Monopoly Mobil Bankacılık** deneyimiyle işlemlerinizi cebinizden yönetin!
+> **Monopoly Dijital Bankacılık**, Monopoly masa oyunları için geliştirilmiş, gerçek zamanlı ve modern bir **dijital bankacılık** uygulamasıdır. Kağıt paraları unutun, **Monopoly Dijital Bankacılık** deneyimiyle işlemlerinizi cebinizden yönetin!
 
 ![Version](https://img.shields.io/badge/version-1.2.1-blue.svg?style=flat&logo=git)
 ![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)
@@ -14,7 +14,7 @@
 
 ## 🌟 Proje Hakkında
 
-**Monopoly Dijital Banka**, klasik Monopoly oyunundaki kağıt para karmaşasını ortadan kaldıran, oyuncuların birbirlerine veya bankaya saniyeler içinde para transferi yapabilmesini sağlayan ücretsiz bir web uygulamasıdır. Hem **Monopoly Mobile Bank** özelliklerini taşır hem de modern arayüzüyle eşsiz bir oyun keyfi sunar.
+**Monopoly Dijital Bankacılık**, klasik Monopoly oyunundaki kağıt para karmaşasını ortadan kaldıran, oyuncuların birbirlerine veya bankaya saniyeler içinde para transferi yapabilmesini sağlayan ücretsiz bir web uygulamasıdır. Hem **Monopoly Dijital Bankacılık** özelliklerini taşır hem de modern arayüzüyle eşsiz bir oyun keyfi sunar.
 
 Supabase altyapısı sayesinde tüm işlemler **gerçek zamanlı (Realtime)** olarak senkronize edilir. Bir oyuncu para gönderdiğinde, karşı tarafın bakiyesi anında güncellenir. İster **Monopoly Dijital Bankacılık** deyin isterseniz elektronik banka, oyununuz artık çok daha hızlı!
 

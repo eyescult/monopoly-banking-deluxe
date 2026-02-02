@@ -90,7 +90,7 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Monopoly Banking',
+                    title: 'Monopoly Digital Banking',
                     text: message
                 });
             } catch {
