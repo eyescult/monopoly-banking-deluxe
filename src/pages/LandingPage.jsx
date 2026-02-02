@@ -180,8 +180,9 @@ const LandingPage = () => {
                     </div>
                     <div className="lp-footer-links">
                         <Link to={isTurkish ? "/tr" : "/en"} className="lp-footer-link">{isTurkish ? 'Ana Sayfa' : 'Home'}</Link>
+                        <a href="https://buymeacoffee.com/tnyligokhan" target="_blank" rel="noreferrer" className="lp-footer-link" style={{ color: '#FFDD00' }}>{isTurkish ? 'Kahve Ismarla' : 'Buy Me a Coffee'}</a>
                         <a href="#" className="lp-footer-link">{isTurkish ? 'Kullanım Koşulları' : 'Terms'}</a>
-                        <a href="https://github.com" target="_blank" rel="noreferrer" className="lp-footer-link">GitHub</a>
+                        <a href="https://github.com/tnyligokhan/monopoly-digital-bank" target="_blank" rel="noreferrer" className="lp-footer-link">GitHub</a>
                     </div>
                 </div>
             </footer>

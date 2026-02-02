@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
-import { Plus, LogIn as LoginIcon, LogOut, User, Trophy, Clock, Gamepad2, Users, Menu, X, Info, Edit3, Globe } from 'lucide-react';
+import { Plus, LogIn as LoginIcon, LogOut, User, Trophy, Clock, Gamepad2, Users, Menu, X, Info, Edit3, Globe, Coffee } from 'lucide-react';
 import toast from 'react-hot-toast';
 import CreateGameModal from '../components/CreateGameModal';
 import JoinGameModal from '../components/JoinGameModal';
@@ -186,6 +186,10 @@ export default function HomePage() {
                         <Info size={20} />
                         <span>{t('about_app')}</span>
                     </button>
+                    <a href="https://buymeacoffee.com/tnyligokhan" target="_blank" rel="noreferrer" className="sidebar-item" style={{ color: '#FFDD00' }}>
+                        <Coffee size={20} />
+                        <span>{t('buy_me_coffee') || (i18n.language === 'tr' ? 'Kahve Ismarla' : 'Buy Me a Coffee')}</span>
+                    </a>
 
                     <div className="sidebar-item-group">
                         <div className="sidebar-item-header">

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X, Coffee } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function AboutModal({ onClose }) {
@@ -77,6 +77,11 @@ export default function AboutModal({ onClose }) {
                         </p>
                         <div className="about-credits">
                             <p className="about-year">{t('copyright')}</p>
+                        </div>
+                        <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                            <a href="https://buymeacoffee.com/tnyligokhan" target="_blank" rel="noreferrer">
+                                <img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=&slug=tnyligokhan&button_color=FFDD00&font_color=000000&font_family=Cookie&outline_color=000000&coffee_color=ffffff" alt="Buy me a coffee" />
+                            </a>
                         </div>
                     </div>
                 </div>

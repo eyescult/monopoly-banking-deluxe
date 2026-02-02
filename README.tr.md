@@ -1,4 +1,5 @@
 # 🏦 Monopoly Dijital Banka
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-yellow.svg?style=flat-square&logo=buy-me-a-coffee)](https://buymeacoffee.com/tnyligokhan)
 
 > 🇬🇧 For English documentation, please [click here](README.md).
 
@@ -94,3 +95,5 @@ Bu proje [MIT](LICENSE) lisansı ile lisanslanmıştır.
 
 ---
 Developed by **Gökhan Ton**
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/tnyligokhan)
