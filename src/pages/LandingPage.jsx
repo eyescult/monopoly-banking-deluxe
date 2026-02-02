@@ -9,7 +9,7 @@ import logoDark from '../assets/logo-dark.svg';
 import '../styles/LandingPage.css';
 
 const LandingPage = () => {
-    const { i18n, t } = useTranslation();
+    const { i18n } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
     const { user } = useAuthStore();
