@@ -63,7 +63,7 @@ const LandingPage = () => {
     return (
         <div className="lp-wrapper">
             <Helmet>
-                <title>{isTurkish ? 'Monopoly Dijital Banka - Online Hesap Takip' : 'Monopoly Digital Bank - Online Tracker'}</title>
+                <title>{isTurkish ? 'Monopoly Dijital Banka' : 'Monopoly Digital Bank'}</title>
                 <meta name="description" content={isTurkish
                     ? "Monopoly oyunlarınızı dijitalleştirin! Kağıt paraları unutun, hızlı ve güvenli para transferi ile oyun keyfini katlayın. Ücretsiz hemen başlayın."
                     : "Digitize your Monopoly games! Forget paper money, enjoy fast and secure money transfers. Start for free now."}
