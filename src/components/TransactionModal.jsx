@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { X, DollarSign, Users, Building2, Car, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -11,22 +11,11 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
     const { makeTransaction } = useGameStore();
 
     // State yönetimi
+    // Initialize state directly from props to avoid synchronous setState in effect
     const [transactionType, setTransactionType] = useState(initialConfig?.type || 'fromBank');
     const [amount, setAmount] = useState('');
     const [selectedPlayer, setSelectedPlayer] = useState(initialConfig?.targetId || '');
     const [loading, setLoading] = useState(false);
-
-    /**
-     * Eğer dışarıdan bir hedef oyuncu veya işlem tipi gelirse state'i güncelle.
-     */
-    useEffect(() => {
-        if (initialConfig?.targetId) {
-            setSelectedPlayer(initialConfig.targetId);
-        }
-        if (initialConfig?.type) {
-            setTransactionType(initialConfig.type);
-        }
-    }, [initialConfig]);
 
     // İşlem yapılabilecek diğer oyuncuları filtrele (aktif olanlar)
     const otherPlayers = game.players.filter(

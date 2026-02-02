@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
@@ -22,9 +22,21 @@ export default function GamePage() {
 
     // UI States
     const [modalConfig, setModalConfig] = useState(null);
-    const [showGameEndModal, setShowGameEndModal] = useState(false);
-    const [hasTriedJoining, setHasTriedJoining] = useState(false);
-    const [gameLoaded, setGameLoaded] = useState(false);
+
+    // Use refs instead of state for tracking flags to avoid synchronous setState in effects
+    const hasTriedJoiningRef = useRef(false);
+    const gameLoadedRef = useRef(false);
+
+    // Derive showGameEndModal from currentGame state instead of using an effect
+    const showGameEndModal = !!currentGame?.winner_id;
+
+    /**
+     * Cleanup function wrapped in useCallback for stable reference
+     */
+    const cleanupGame = useCallback(() => {
+        toast.dismiss();
+        cleanup();
+    }, [cleanup]);
 
     /**
      * Sayfa yüklendiğinde oyun kanalına abone olur.
@@ -67,21 +79,19 @@ export default function GamePage() {
                 isMounted = false;
                 // Visibility listener'ı temizle
                 document.removeEventListener('visibilitychange', handleVisibilityChange);
-                // Sayfadan çıkarken oyunla ilgili tüm bildirimleri temizle
-                toast.dismiss();
-                cleanup();
+                cleanupGame();
             };
         }
-    }, [gameId]);
+    }, [gameId, subscribeToGame, navigate, cleanupGame]);
 
     /**
      * Kullanıcı oyuna henüz dahil değilse otomatik katılma işlemi yapar.
      */
     useEffect(() => {
-        if (currentGame && user && !currentGame.starting_timestamp && !hasTriedJoining) {
+        if (currentGame && user && !currentGame.starting_timestamp && !hasTriedJoiningRef.current) {
             const isPlayer = currentGame.players.some(p => p.user_id === user.id);
             if (!isPlayer) {
-                setHasTriedJoining(true);
+                hasTriedJoiningRef.current = true;
                 joinGame(gameId, user.id).then(result => {
                     if (result.success) {
                         toast.success('Oyuna giriş yapıldı');
@@ -90,7 +100,7 @@ export default function GamePage() {
                     }
                 });
             }
-        } else if (currentGame && user && hasTriedJoining) {
+        } else if (currentGame && user && hasTriedJoiningRef.current) {
             // Eğer daha önce katılmayı denediysek (veya katıldıysak) ve şu an listede yoksak -> Atıldık
             // Bu kontrolün sürekli tekrarlanmaması için ref veya state kontrolü yapabiliriz ama
             // cleanup sonrası currentGame null olacağı için döngü kırılacaktır.
@@ -104,30 +114,22 @@ export default function GamePage() {
                 navigate('/');
             }
         }
-    }, [currentGame, user, gameId, hasTriedJoining]);
+    }, [currentGame, user, gameId, joinGame, cleanup, navigate]);
 
     /**
      * Oyun silindiğinde ana sayfaya yönlendir.
      */
     useEffect(() => {
         if (currentGame) {
-            setGameLoaded(true);
-        } else if (gameLoaded && !currentGame) {
+            gameLoadedRef.current = true;
+        } else if (gameLoadedRef.current && !currentGame) {
             // current_game_id'yi temizle (sonsuz döngüyü engelle)
             useAuthStore.getState().setCurrentGameId(null);
             toast.error('Oyun kurucu tarafından sonlandırıldı', { id: 'game-ended-toast' });
             navigate('/');
         }
-    }, [currentGame, gameLoaded]);
+    }, [currentGame, navigate]);
 
-    /**
-     * Kazanan belirlendiğinde oyun sonu modalını açar.
-     */
-    useEffect(() => {
-        if (currentGame?.winner_id && !showGameEndModal) {
-            setShowGameEndModal(true);
-        }
-    }, [currentGame?.winner_id]);
 
     /**
      * Gelen işlemleri takip eder ve sadece yeni olanlar için bildirim gösterir.
@@ -183,7 +185,7 @@ export default function GamePage() {
                 }
             });
         }
-    }, [currentGame?.transaction_history, user.id]);
+    }, [currentGame?.transaction_history, currentGame?.players, user.id]);
 
     /**
      * Oyundan ayrılma işlemi.
@@ -655,7 +657,7 @@ export default function GamePage() {
                     game={currentGame}
                     currentPlayer={currentPlayer}
                     winner={currentGame.players.find(p => p.user_id === currentGame.winner_id)}
-                    onClose={() => setShowGameEndModal(false)}
+                    onClose={() => { }} // No-op since visibility is derived from currentGame.winner_id
                     onLeaveGame={() => leaveGame(user.id)}
                 />
             )}

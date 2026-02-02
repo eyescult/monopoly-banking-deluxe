@@ -87,7 +87,7 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
                     title: 'Monopoly Banking',
                     text: message
                 });
-            } catch (err) {
+            } catch {
                 console.log('Share cancelled');
             }
         } else {

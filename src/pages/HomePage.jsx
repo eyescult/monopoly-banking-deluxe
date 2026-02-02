@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
@@ -37,6 +37,27 @@ export default function HomePage() {
     });
 
     /**
+     * Son tamamlanan oyunları veritabanından çeker.
+     */
+    const loadRecentGames = useCallback(async () => {
+        const result = await getRecentGames(10);
+        if (result.success) {
+            setRecentGames(result.games);
+        }
+    }, [getRecentGames]);
+
+    /**
+     * Kullanıcının genel performans istatistiklerini hesaplar.
+     */
+    const loadUserStats = useCallback(async () => {
+        if (!user?.id) return;
+        const result = await getUserStats(user.id);
+        if (result.success) {
+            setStats(result.stats);
+        }
+    }, [user, getUserStats]);
+
+    /**
      * Kullanıcı durumu değiştiğinde veya sayfa yüklendiğinde çalışır.
      * Aktif oyun kontrolü ve istatistik yükleme işlemlerini yapar.
      */
@@ -45,30 +66,12 @@ export default function HomePage() {
             navigate(`/game/${user.current_game_id}`);
         }
         if (user?.id) {
+            // These are async data fetching operations, which is a valid useEffect pattern
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             loadRecentGames();
             loadUserStats();
         }
-    }, [user, navigate]);
-
-    /**
-     * Son tamamlanan oyunları veritabanından çeker.
-     */
-    const loadRecentGames = async () => {
-        const result = await getRecentGames(10);
-        if (result.success) {
-            setRecentGames(result.games);
-        }
-    };
-
-    /**
-     * Kullanıcının genel performans istatistiklerini hesaplar.
-     */
-    const loadUserStats = async () => {
-        const result = await getUserStats(user.id);
-        if (result.success) {
-            setStats(result.stats);
-        }
-    };
+    }, [user, navigate, loadRecentGames, loadUserStats]);
 
     /**
      * Çıkış yapma işlemini yönetir.
