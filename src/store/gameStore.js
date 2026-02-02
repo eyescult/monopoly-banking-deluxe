@@ -25,9 +25,7 @@ export const useGameStore = create((set, get) => ({
     loading: false,          // İşlem yüklenme durumu
     realtimeChannel: null,  // Supabase realtime kanal referansı
     isPageVisible: true,    // Sayfa görünürlük durumu (ekran açık/kapalı)
-    isReconnecting: false,  // Yeniden bağlanma durumu
-    lastUpdate: Date.now(), // Son veri güncelleme zamanı (Heartbeat/Zombi kontrolü için)
-    pendingTransactions: [], // Ekran kapandığında bekleyen işlemler
+
 
     /**
      * Rastgele 4 haneli benzersiz oyun ID'si üretir.
@@ -210,9 +208,9 @@ export const useGameStore = create((set, get) => ({
                 },
                 (payload) => {
                     if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
-                        set({ currentGame: payload.new, lastUpdate: Date.now() });
+                        set({ currentGame: payload.new });
                     } else if (payload.eventType === 'DELETE') {
-                        set({ currentGame: null, lastUpdate: Date.now() });
+                        set({ currentGame: null });
                     }
                 }
             )
@@ -251,67 +249,14 @@ export const useGameStore = create((set, get) => ({
                 .single();
 
             if (!error && data) {
-                set({ currentGame: data, lastUpdate: Date.now() });
+                set({ currentGame: data });
             }
         } catch (err) {
             console.error('[GameStore] Failed to refresh game data:', err);
         }
     },
 
-    /**
-     * Realtime kanalını yeniden bağlar.
-     * Ekran açıldığında veya bağlantı koptuğunda çağrılır.
-     */
-    reconnectChannel: async () => {
-        const gameId = get().currentGameId;
-        if (!gameId || get().isReconnecting) return;
 
-        console.log('[Connection] Screen unlocked, checking network...');
-        set({ isReconnecting: true });
-
-        // 1. ÖNEMLİ: İşletim sisteminin ağı uyandırması için 1 saniye bekle
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        try {
-            // 2. Heartbeat: Supabase ile gerçekten konuşabiliyor muyuz? (Küçük bir sorgu)
-            const { error } = await supabase.from('games').select('id').eq('id', gameId).single();
-
-            if (error) throw error;
-
-            // 3. Bağlantı sağlamsa kanalları tazele
-            console.log('[Connection] Network is alive, refreshing subscriptions...');
-            // Mevcut kanalı kapatıp sıfırdan abonelik başlat (Zombi bağlantıları temizler)
-            get().subscribeToGame(gameId);
-            await get().refreshGameData(gameId);
-
-        } catch (err) {
-            console.error('[Connection] Heartbeat failed, retrying in 2s...', err);
-            // Eğer başarısız olursa 2 saniye sonra bir kez daha dene
-            // Not: Recursive çağrı yerine basitçe fonksiyonun bitmesine izin veriyoruz, 
-            // kullanıcı tekrar denerse veya visibility toggle olursa tekrar tetiklenir.
-            // Ancak otomatik deneme isteniyorsa:
-            setTimeout(() => {
-                // isReconnecting'i false yapıp tekrar dene ki kilit takılı kalmasın
-                set({ isReconnecting: false });
-                get().reconnectChannel();
-            }, 2000);
-            return; // Finally bloğu çalışmadan çıkmaması için return koymuyoruz ama
-            // setTimeout asenkron olduğu için finally önce çalışır.
-            // Bu yüzden yukarıdaki setTimeout içindeki set({isReconnecting: false}) önemli değil,
-            // çünkü finally zaten false yapacak. 
-            // Ama retryLogic için `isReconnecting` check'ini geçmesi lazım.
-            // O yüzden setTimeout içinde çağırmadan önce flag'i yönetmek lazım.
-            // Düzeltme: finally her durumda çalışır. Retry'ı finally sonrasına saklamak zor.
-            // En temiz yöntem:
-        } finally {
-            // Eğer hata alıp retry planladıysak isReconnecting'i kapatmamalıyız ki butonlar kapalı kalsın?
-            // Hayır, retry 2 saniye sonra. O arada kullanıcıya kontrolü verebiliriz veya "Bağlanıyor" demeye devam edebiliriz.
-            // Kullanıcı deneyimi için: Hata aldıysak "Bağlanamadı" durumuna düşer. 
-            // Ancak kodda setTimeout var. 
-            // Basit çözüm: always false yap. Retry gelince tekrar true olur.
-            set({ isReconnecting: false });
-        }
-    },
 
     /**
      * Sayfa görünürlük durumunu ayarlar.
@@ -321,45 +266,14 @@ export const useGameStore = create((set, get) => ({
         set({ isPageVisible: isVisible });
 
         if (isVisible) {
-            // Ekran açıldı - bekleyen işlemleri işle
-            console.log('[Visibility] Page visible, processing pending transactions...');
-            get().processPendingTransactions();
+            // Sadece logla, işlem yapma (GamePage reload edecek)
+            console.log('[Visibility] Page visible');
         } else {
-            console.log('[Visibility] Page hidden, transactions will queue');
+            console.log('[Visibility] Page hidden');
         }
     },
 
-    /**
-     * Bekleyen işlemleri sırayla işler.
-     * Ekran açıldıktan sonra çağrılır.
-     */
-    processPendingTransactions: async () => {
-        const pending = get().pendingTransactions;
-        if (pending.length === 0) return;
 
-        console.log(`[Transaction Queue] Processing ${pending.length} pending transaction(s)...`);
-
-        // İşlemleri sırayla işle
-        for (const txData of pending) {
-            try {
-                const result = await get().makeTransaction(txData.params);
-
-                if (result.success) {
-                    // Başarılı callback'i çağır
-                    txData.onSuccess?.(result);
-                } else {
-                    // Hata callback'i çağır
-                    txData.onError?.(result.error || 'İşlem başarısız');
-                }
-            } catch (err) {
-                console.error('[Transaction Queue] Failed to process pending transaction:', err);
-                txData.onError?.(err.message);
-            }
-        }
-
-        // Kuyruğu temizle
-        set({ pendingTransactions: [] });
-    },
 
     /**
      * Mevcut oyunu terk eder.
@@ -437,45 +351,10 @@ export const useGameStore = create((set, get) => ({
     makeTransaction: async ({ gameId, type, amount, fromUserId = null, toUserId = null }) => {
         // Direkt DOM kontrolü yap (Store state'i gecikebilir)
         const isHidden = document.visibilityState === 'hidden';
-        const isReconnecting = get().isReconnecting;
 
-        if (isHidden || isReconnecting) {
-            const reason = isHidden ? 'Page is hidden' : 'Reconnecting';
-            console.log(`[Transaction] ${reason}, queueing transaction...`);
-
-            // Kuyruğa ekle, ancak uzun süre beklemezse timeout ile reject et
-            return new Promise((resolve, reject) => {
-                const pending = get().pendingTransactions;
-                const queueTime = Date.now();
-
-                set({
-                    pendingTransactions: [
-                        ...pending,
-                        {
-                            params: { gameId, type, amount, fromUserId, toUserId },
-                            queuedAt: queueTime,
-                            onSuccess: resolve,
-                            onError: (error) => reject(new Error(error))
-                        }
-                    ]
-                });
-
-                console.log('[Transaction] Transaction queued, will process when page becomes visible');
-
-                // 30 saniye içinde işlem yapılmazsa timeout
-                setTimeout(() => {
-                    const currentPending = get().pendingTransactions;
-                    const stillPending = currentPending.find(t => t.queuedAt === queueTime);
-
-                    if (stillPending) {
-                        // Hala kuyrukta - timeout
-                        set({
-                            pendingTransactions: currentPending.filter(t => t.queuedAt !== queueTime)
-                        });
-                        reject(new Error('QUEUE_TIMEOUT'));
-                    }
-                }, 30000);
-            });
+        if (isHidden) {
+            // Sayfa gizliyse işlem yapma, hata dön (UI zaten reload edecek)
+            return { success: false, error: 'Ekran kapalıyken işlem yapılamaz' };
         }
 
         // Retry mekanizması ile işlemi dene

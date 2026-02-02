@@ -18,7 +18,7 @@ export default function GamePage() {
     const { gameId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const { currentGame, subscribeToGame, leaveGame, startGame, joinGame, cleanup, makeTransaction, kickPlayer, disbandGame, isReconnecting } = useGameStore();
+    const { currentGame, subscribeToGame, leaveGame, startGame, joinGame, cleanup, makeTransaction, kickPlayer, disbandGame } = useGameStore();
 
 
     // UI States
@@ -69,28 +69,9 @@ export default function GamePage() {
              * Bu, telefon ekranı kapandığında WebSocket'in kopması sorununu çözer.
              */
             const handleVisibilityChange = () => {
-                const isVisible = document.visibilityState === 'visible';
-
-                // Store'a görünürlük durumunu bildir
-                useGameStore.getState().setPageVisibility(isVisible);
-
-                if (isVisible) {
-                    console.log('[Visibility] Page became visible, checking connection health...');
-
-                    // NÜKLEER SEÇENEK: Eğer son veriden bu yana 30 saniyeden fazla geçmişse
-                    // ve sayfa yeni görünür olduysa, zombi bağlantı riskine karşı sayfayı yenile.
-                    const lastUpdate = useGameStore.getState().lastUpdate;
-                    const timeDiff = Date.now() - lastUpdate;
-
-                    if (timeDiff > 30000) { // 30 saniye
-                        console.warn(`[Visibility] Data is stale by ${timeDiff}ms. Forcing hard reload...`);
-                        window.location.reload();
-                        return;
-                    }
-
-                    console.log('[Visibility] Connection seems fresh enough, reconnecting channel...');
-                    // Supabase bağlantısını ve veriyi yenile
-                    useGameStore.getState().reconnectChannel();
+                if (document.visibilityState === 'visible') {
+                    console.log('[Visibility] Page became visible. Forcing reload to refresh stale connections...');
+                    window.location.reload();
                 }
             };
 
@@ -283,19 +264,6 @@ export default function GamePage() {
         }
 
         if (type === 'fromSalary') {
-            // Eğer bağlantı tazeleniyorsa kullanıcıya bilgi ver ve işlemi durdur
-            if (isReconnecting) {
-                toast('Bağlantı yenileniyor, lütfen bekleyin...', {
-                    icon: '🔄',
-                    style: {
-                        borderRadius: '10px',
-                        background: '#333',
-                        color: '#fff',
-                    },
-                });
-                return;
-            }
-
             const loadingToast = toast.loading('Maaş yatırılıyor...');
 
             try {
@@ -323,13 +291,16 @@ export default function GamePage() {
                 toast.dismiss(loadingToast);
                 if (err.message === 'TIMEOUT') {
                     // Bağlantı hatası varsayımıyla yenilemeyi tetikle
-                    console.log('[GamePage] Transaction timed out, forcing reconnection...');
-                    useGameStore.getState().reconnectChannel();
+                    console.log('[GamePage] Transaction timed out, forcing reload...');
 
-                    toast.error('Bağlantı zaman aşımı. Otomatik yenileniyor...', {
+                    toast.error('Bağlantı zaman aşımı. Sayfa yenileniyor...', {
                         id: 'salary-timeout',
-                        duration: 5000
+                        duration: 3000
                     });
+
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
                 } else if (err.message === 'QUEUE_TIMEOUT') {
                     toast.error('İşlem çok uzun süre bekledi. Lütfen tekrar deneyin.', {
                         id: 'salary-queue-timeout',
@@ -479,11 +450,11 @@ export default function GamePage() {
                             <button
                                 className="action-item"
                                 onClick={() => openTransactionModal('toPlayer', player.user_id)}
-                                disabled={player.bankrupt_timestamp !== null || isBankrupt || isReconnecting}
+                                disabled={player.bankrupt_timestamp !== null || isBankrupt}
                                 style={{
                                     width: '100%',
                                     marginBottom: 0,
-                                    ...((player.bankrupt_timestamp || isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
+                                    ...((player.bankrupt_timestamp || isBankrupt) ? { opacity: 0.5, cursor: 'not-allowed' } : {})
                                 }}
                             >
                                 <div className="player-info">
@@ -536,8 +507,8 @@ export default function GamePage() {
                     <button
                         className="action-item"
                         onClick={() => openTransactionModal('toBank')}
-                        disabled={isBankrupt || isReconnecting}
-                        style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        disabled={isBankrupt}
+                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
                         <div className="player-info">
                             <div className="player-avatar bank-avatar"><Building2 size={20} color="white" /></div>
@@ -548,8 +519,8 @@ export default function GamePage() {
                         <button
                             className="action-item"
                             onClick={() => openTransactionModal('toFreeParking')}
-                            disabled={isBankrupt || isReconnecting}
-                            style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                            disabled={isBankrupt}
+                            style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                         >
                             <div className="player-info">
                                 <div className="player-avatar parking-avatar"><Car size={20} color="white" /></div>
@@ -569,30 +540,30 @@ export default function GamePage() {
                     <button
                         className="grid-btn"
                         onClick={() => openTransactionModal('fromBank')}
-                        disabled={isBankrupt || isReconnecting}
-                        style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        disabled={isBankrupt}
+                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
-                        {isReconnecting ? <div className="spinner-small"></div> : <Building2 size={24} />}
-                        <span>{isReconnecting ? 'Bağlanıyor...' : 'Banka'}</span>
+                        <Building2 size={24} />
+                        <span>Banka</span>
                     </button>
                     <button
                         className="grid-btn"
                         onClick={() => openTransactionModal('fromSalary')}
-                        disabled={isBankrupt || isReconnecting}
-                        style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                        disabled={isBankrupt}
+                        style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                     >
-                        {isReconnecting ? <div className="spinner-small"></div> : <Wallet size={24} />}
-                        <span>{isReconnecting ? 'Bağlanıyor...' : 'Maaş'}</span>
+                        <Wallet size={24} />
+                        <span>Maaş</span>
                     </button>
                     {currentGame.enable_free_parking && (
                         <button
                             className="grid-btn"
                             onClick={() => openTransactionModal('fromFreeParking')}
-                            disabled={isBankrupt || isReconnecting}
-                            style={(isBankrupt || isReconnecting) ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                            disabled={isBankrupt}
+                            style={isBankrupt ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                         >
-                            {isReconnecting ? <div className="spinner-small"></div> : <Car size={24} />}
-                            <span>{isReconnecting ? 'Bağlanıyor...' : 'Otopark'}</span>
+                            <Car size={24} />
+                            <span>Otopark</span>
                         </button>
                     )}
                 </div>
