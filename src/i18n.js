@@ -19,8 +19,8 @@ i18n
     .use(initReactI18next) // passes i18n down to react-i18next
     .init({
         resources,
-        fallbackLng: 'tr', // Default language is Turkish as per user request context implicitly, or maybe EN. Let's stick to TR default as the user asked for "Lokalizasyon özelliği eklemeni istiyorum" in Turkish.
-        debug: true,
+        fallbackLng: 'tr',
+        debug: false,
 
         interpolation: {
             escapeValue: false, // react already safes from xss

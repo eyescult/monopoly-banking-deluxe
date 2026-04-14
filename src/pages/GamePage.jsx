@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { useAuthStore } from '../store/authStore';
+import { usePropertyStore, getGroupColor, getPropertyIcon } from '../store/propertyStore';
 import {
     Menu, X, DollarSign, Send, ArrowRightLeft,
-    LogOut, History, ShieldAlert, BadgeInfo,
-    MoreHorizontal, CircleAlert, Globe
+    LogOut, History, ShieldAlert, CircleAlert, Globe, Home, ShoppingCart
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -22,12 +22,22 @@ export default function GamePage() {
     const { t, i18n } = useTranslation();
 
     const {
-        game,
+        currentGame,
         subscribeToGame,
         leaveGame,
         endGame,
-        bankruptPlayer
+        bankruptPlayer,
+        refreshGameData
     } = useGameStore();
+    const game = currentGame;
+
+    // Property store for inline buy
+    const {
+        properties,
+        initForLegacyGame: initProperties,
+        buyProperty
+    } = usePropertyStore();
+    const [buyingProperty, setBuyingProperty] = useState(null);
 
     // UI States
     const [showSidebar, setShowSidebar] = useState(false);
@@ -50,9 +60,18 @@ export default function GamePage() {
         if (!user || !gameId) return;
 
         let subscription = null;
+        let isMounted = true;
 
         const connect = async () => {
             const result = await subscribeToGame(gameId);
+            // Prevent state updates and leaks if user leaves page quickly.
+            if (!isMounted) {
+                if (result?.success && result.subscription) {
+                    result.subscription.unsubscribe();
+                }
+                return;
+            }
+
             setInitialLoading(false);
 
             if (!result.success) {
@@ -66,11 +85,18 @@ export default function GamePage() {
         connect();
 
         return () => {
+            isMounted = false;
             if (subscription) {
                 subscription.unsubscribe();
             }
         };
     }, [user, gameId, subscribeToGame, navigate, t]);
+
+    // Initialize property store for inline buy section
+    useEffect(() => {
+        if (!user?.id || !gameId) return;
+        initProperties(gameId, user.id, user.name || 'Guest');
+    }, [gameId, initProperties, user?.id, user?.name]);
 
     /**
      * Oyun bittiğinde modalı göster.
@@ -116,6 +142,8 @@ export default function GamePage() {
 
     const currentPlayer = game.players.find(p => p.user_id === user.id);
     const isHost = game.created_by === user.id;
+    const transactions = game.transaction_history || [];
+    const freeParkingBalance = game.free_parking_money || 0;
 
     // Oyuncu oyunda değilse (örn. atıldıysa veya hata olduysa)
     if (!currentPlayer) {
@@ -133,7 +161,7 @@ export default function GamePage() {
      * Oyundan ayrılma işlemi.
      */
     const handleLeaveGame = async () => {
-        const result = await leaveGame(game.id, user.id);
+        const result = await leaveGame(user.id);
         if (result.success) {
             navigate('/');
         } else {
@@ -387,6 +415,75 @@ export default function GamePage() {
                 )}
             </div>
 
+            <div className="quick-actions fade-in-up" style={{ marginTop: '12px' }}>
+                <button className="action-btn info" onClick={() => navigate('/properties')}>
+                    <div className="icon-wrapper"><Home size={24} /></div>
+                    <span>{t('properties') || 'Properties'}</span>
+                </button>
+                <button className="action-btn warning" onClick={() => navigate('/trades')}>
+                    <div className="icon-wrapper"><ArrowRightLeft size={24} /></div>
+                    <span>{t('trades') || 'Trades'}</span>
+                </button>
+            </div>
+
+            {/* Inline Buy Properties Section */}
+            {properties.filter(p => !p.owner_id && p.type !== 'special').length > 0 && (
+                <div className="players-section fade-in-up">
+                    <div className="section-header">
+                        <h3><ShoppingCart size={18} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('buy_property') || 'Buy Property'}</h3>
+                    </div>
+                    <div className="games-list" style={{ maxHeight: 320, overflowY: 'auto' }}>
+                        {properties
+                            .filter(p => !p.owner_id && p.type !== 'special')
+                            .map(p => {
+                                const color = getGroupColor(p.group_name);
+                                return (
+                                    <div key={p.id} className="game-card property-card" style={{ marginBottom: 8 }}>
+                                        <div style={{ height: 6, width: '100%', borderRadius: '8px 8px 0 0', backgroundColor: color }} />
+                                        <div className="game-card-header" style={{ padding: '8px 12px' }}>
+                                            <span style={{ fontSize: '0.9rem' }}>
+                                                <strong>#{p.position}</strong>{' '}
+                                                {getPropertyIcon(p.type)}{' '}
+                                                {p.name}
+                                            </span>
+                                            <span style={{
+                                                fontSize: '0.7rem', padding: '2px 6px', borderRadius: 'var(--radius-full)',
+                                                background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text-secondary)'
+                                            }}>
+                                                {p.group_name || p.type}
+                                            </span>
+                                        </div>
+                                        <div className="game-card-body" style={{ padding: '4px 12px 10px' }}>
+                                            <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem', marginBottom: 6 }}>
+                                                <span><strong>${p.price.toLocaleString()}</strong></span>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Rent: ${p.rent_base}</span>
+                                            </div>
+                                            <button
+                                                className="btn btn-primary btn-small"
+                                                disabled={isBankrupt || buyingProperty === p.id || currentPlayer.balance < p.price}
+                                                onClick={async () => {
+                                                    setBuyingProperty(p.id);
+                                                    const result = await buyProperty(p.id, user.id);
+                                                    if (result.success) {
+                                                        // Deduct from legacy balance
+                                                        await refreshGameData(gameId);
+                                                        toast.success(`Bought ${p.name}!`);
+                                                    } else {
+                                                        toast.error(result.error || 'Purchase failed');
+                                                    }
+                                                    setBuyingProperty(null);
+                                                }}
+                                            >
+                                                {buyingProperty === p.id ? 'Buying…' : `Buy $${p.price.toLocaleString()}`}
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                    </div>
+                </div>
+            )}
+
             {/* Oyuncu Listesi (Transfer için) */}
             <div className="players-section fade-in-up">
                 <div className="section-header">
@@ -424,7 +521,7 @@ export default function GamePage() {
                 <div className="parking-card fade-in-up">
                     <div className="parking-info">
                         <div className="parking-label">{t('free_parking_balance')}</div>
-                        <div className="parking-amount">${game.free_parking_balance.toLocaleString()}</div>
+                        <div className="parking-amount">${freeParkingBalance.toLocaleString()}</div>
                     </div>
                     <button
                         className="btn btn-small btn-outline"
@@ -449,8 +546,8 @@ export default function GamePage() {
                             </button>
                         </div>
                         <div className="history-list">
-                            {game.transactions && game.transactions.length > 0 ? (
-                                [...game.transactions].reverse().slice(0, 20).map((tx, idx) => (
+                            {transactions.length > 0 ? (
+                                [...transactions].slice(0, 20).map((tx, idx) => (
                                     <div key={idx} className="history-item">
                                         <div className="history-icon">
                                             <ArrowRightLeft size={16} />
@@ -498,6 +595,9 @@ export default function GamePage() {
                     onClose={() => {
                         setShowTransactionModal(false);
                         setTransactionConfig(null);
+                        // Force-refresh game data so the balance updates immediately
+                        // even if the realtime channel is slow.
+                        refreshGameData(gameId);
                     }}
                 />
             )}
@@ -508,7 +608,7 @@ export default function GamePage() {
                     currentPlayer={currentPlayer}
                     winner={game.players.find(p => p.user_id === game.winner_id) || { name: t('unknown'), user_id: game.winner_id }}
                     onClose={() => setShowGameEndModal(false)}
-                    onLeaveGame={leaveGame}
+                    onLeaveGame={handleLeaveGame}
                 />
             )}
         </div>

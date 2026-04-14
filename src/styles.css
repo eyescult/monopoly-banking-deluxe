@@ -2195,3 +2195,230 @@ input[type="checkbox"] {
     display: none !important;
   }
 }
+
+/* ============================================
+   PROPERTY CARDS – color bands, buildings
+   ============================================ */
+
+.property-card {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Coloured top bar that matches the Monopoly group colour */
+.property-color-band {
+  height: 8px;
+  width: 100%;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+/* Badge showing property type / group name */
+.property-type-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--background);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+/* Row of house emoji / hotel emoji */
+.building-indicator {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 6px 0 4px;
+}
+
+.building-house {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.building-hotel {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Status badge: MORTGAGED */
+.property-status-badge {
+  display: inline-block;
+  margin: 6px 0;
+  padding: 2px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.05em;
+}
+
+.property-status-badge.mortgaged {
+  background: rgba(202, 100, 16, 0.15);
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+
+/* Small hint when player doesn't own full group */
+.property-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin: 4px 0 8px;
+  font-style: italic;
+}
+
+/* Action buttons row on owned property card */
+.property-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+/* Stats row inside property card */
+.property-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+/* Owner badge on board overview */
+.owner-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.03em;
+}
+
+.owner-you {
+  background: rgba(16, 124, 16, 0.15);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.owner-other {
+  background: rgba(209, 52, 56, 0.12);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.owner-free {
+  background: rgba(21, 84, 135, 0.1);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+/* ============================================
+   TRADE PAGE – property pills, warnings, inbox
+   ============================================ */
+
+/* Property selection pill in create-trade form */
+.property-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+}
+
+/* Colour dot on the left of each pill */
+.pill-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pill-name {
+  white-space: nowrap;
+}
+
+.pill-buildings {
+  font-size: 0.8em;
+  opacity: 0.85;
+}
+
+/* Pill with building warning: subtle amber outline */
+.property-pill-warn {
+  border-color: var(--warning) !important;
+  color: var(--warning);
+}
+
+/* Building auto-sell warning banner */
+.trade-building-warn {
+  background: rgba(202, 80, 16, 0.1);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  color: var(--warning);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* Trade inbox card coloring by status */
+.trade-card {
+  border-left: 3px solid var(--border);
+  transition: border-color 0.2s;
+}
+
+.trade-card.trade-pending {
+  border-left-color: var(--primary);
+}
+
+.trade-card.trade-accepted {
+  border-left-color: var(--success);
+}
+
+.trade-card.trade-rejected {
+  border-left-color: var(--danger);
+  opacity: 0.75;
+}
+
+/* Trade status badge in inbox */
+.trade-status-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.05em;
+}
+
+.trade-status-pending  { background: rgba(246,57,25,0.12); color: var(--primary); border: 1px solid var(--primary); }
+.trade-status-accepted { background: rgba(16,124,16,0.12);  color: var(--success); border: 1px solid var(--success); }
+.trade-status-rejected { background: rgba(209,52,56,0.12);  color: var(--danger);  border: 1px solid var(--danger); }
+
+/* Two-column trade summary grid in inbox */
+.trade-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: start;
+  margin: 8px 0;
+}
+
+.trade-arrow {
+  font-size: 1.4rem;
+  color: var(--text-secondary);
+  align-self: center;
+  padding-top: 20px;
+}
+
+.trade-side-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.trade-money {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--success);
+  margin-bottom: 4px;
+}

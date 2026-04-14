@@ -24,6 +24,9 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
         p => p.user_id !== currentPlayer.user_id && p.balance > 0
     );
 
+    // Whether the current transaction type uses a fixed (non-user-entered) amount
+    const isFixedAmount = transactionType === 'fromSalary' || transactionType === 'fromFreeParking';
+
     /**
      * Modal başlığını dinamik olarak belirler.
      */
@@ -40,6 +43,8 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
             modalTitle = t('pay_to_parking');
         } else if (transactionType === 'fromFreeParking') {
             modalTitle = t('take_from_parking');
+        } else if (transactionType === 'fromSalary') {
+            modalTitle = t('salary_action') || 'Receive Salary';
         }
     }
 
@@ -51,11 +56,23 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
         e.preventDefault();
         e.stopPropagation();
 
-        const amountNum = parseInt(amount, 10);
+        // Determine the effective amount depending on transaction type
+        let amountNum;
+        if (transactionType === 'fromSalary') {
+            amountNum = game.salary;
+        } else if (transactionType === 'fromFreeParking') {
+            amountNum = game.free_parking_money || 0;
+        } else {
+            amountNum = parseInt(amount, 10);
+        }
 
         // Form validasyonları
         if (isNaN(amountNum) || amountNum <= 0) {
-            toast.error(t('invalid_amount'), { id: 'tx-invalid-amount' });
+            if (transactionType === 'fromFreeParking') {
+                toast.error(t('parking_empty') || 'Free parking has no money', { id: 'tx-parking-empty' });
+            } else {
+                toast.error(t('invalid_amount'), { id: 'tx-invalid-amount' });
+            }
             return;
         }
 
@@ -227,8 +244,24 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                         </div>
                     )}
 
+                    {/* Fixed-amount confirmation for Salary & Free Parking */}
+                    {isFixedAmount && (
+                        <div className="info-box" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                            <div className="info-label">
+                                {transactionType === 'fromSalary'
+                                    ? (t('salary_amount') || 'Salary')
+                                    : (t('parking_pot') || 'Free Parking Pot')}
+                            </div>
+                            <div className="info-value" style={{ color: 'var(--success)' }}>
+                                ${transactionType === 'fromSalary'
+                                    ? game.salary?.toLocaleString()
+                                    : (game.free_parking_money || 0).toLocaleString()}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Miktar Girişi (Bazı işlemlerde otomatik bakiye kullanılır) */}
-                    {transactionType !== 'fromSalary' && transactionType !== 'fromFreeParking' && (
+                    {!isFixedAmount && (
                         <div className="form-group">
                             <label className="form-label">{t('amount')}</label>
                             <div className="amount-input-wrapper">
@@ -296,4 +329,3 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
         </div>
     );
 }
-

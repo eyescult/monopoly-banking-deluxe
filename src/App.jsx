@@ -7,6 +7,8 @@ import SetUsernamePage from './pages/SetUsernamePage';
 import HomePage from './pages/HomePage';
 import GamePage from './pages/GamePage';
 import LandingPage from './pages/LandingPage';
+import PropertiesPage from './pages/PropertiesPage';
+import TradePage from './pages/TradePage';
 import './styles.css';
 
 import { useLocation } from 'react-router-dom';
@@ -169,6 +171,24 @@ function App() {
           element={
             <ProtectedRoute>
               <GamePage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/properties"
+          element={
+            <ProtectedRoute>
+              <PropertiesPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/trades"
+          element={
+            <ProtectedRoute>
+              <TradePage />
             </ProtectedRoute>
           }
         />

@@ -84,7 +84,7 @@ export default function HomePage() {
             setShowSignOutConfirm(true);
             return;
         }
-        const result = await signOut();
+        const result = await signOut({ deleteGuestData: true });
         if (result.success) {
             navigate('/login');
         } else {
@@ -99,7 +99,7 @@ export default function HomePage() {
         setShowSignOutConfirm(false);
         setShowSidebar(false);
 
-        const result = await signOut();
+        const result = await signOut({ deleteGuestData: true });
         if (result.success) {
             navigate('/login');
         } else {

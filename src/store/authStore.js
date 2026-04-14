@@ -189,17 +189,57 @@ export const useAuthStore = create((set, get) => ({
     /**
      * Oturumu kapatır. Anonim kullanıcı ise bilgilerini temizler.
      */
-    signOut: async () => {
+    signOut: async ({ deleteGuestData = false } = {}) => {
         try {
             const user = get().user;
 
+            // Guest users must be deleted while still authenticated (RLS requires auth.uid()).
+            // This only runs for explicit logout flows.
+            if (deleteGuestData && user?.is_anonymous) {
+                // If guest is still in a game, remove from players list first.
+                if (user.current_game_id) {
+                    const { data: game } = await supabase
+                        .from('games')
+                        .select('id, players, winner_id, ending_timestamp')
+                        .eq('id', user.current_game_id)
+                        .maybeSingle();
+
+                    if (game?.players) {
+                        const updatedPlayers = game.players.filter(player => player.user_id !== user.id);
+
+                        if (updatedPlayers.length === 0) {
+                            await supabase.from('games').delete().eq('id', game.id);
+                        } else {
+                            let winnerId = game.winner_id;
+                            let endingTimestamp = game.ending_timestamp;
+                            const nonBankruptPlayers = updatedPlayers.filter(player => !player.bankrupt_timestamp);
+
+                            if (!winnerId && nonBankruptPlayers.length === 1 && updatedPlayers.length > 1) {
+                                winnerId = nonBankruptPlayers[0].user_id;
+                                endingTimestamp = new Date().toISOString();
+                            }
+
+                            await supabase
+                                .from('games')
+                                .update({
+                                    players: updatedPlayers,
+                                    winner_id: winnerId,
+                                    ending_timestamp: endingTimestamp
+                                })
+                                .eq('id', game.id);
+                        }
+                    }
+                }
+
+                const { error: deleteUserError } = await supabase
+                    .from('users')
+                    .delete()
+                    .eq('id', user.id);
+                if (deleteUserError) throw deleteUserError;
+            }
+
             const { error: signOutError } = await supabase.auth.signOut();
             if (signOutError) throw signOutError;
-
-            // Eğer kullanıcı anonimse, veritabanından profilini de silelim (opsiyonel)
-            if (user && user.is_anonymous) {
-                await supabase.from('users').delete().eq('id', user.id);
-            }
 
             set({ user: null, session: null });
             return { success: true };

@@ -190,7 +190,7 @@ export const useGameStore = create((set, get) => ({
      * Supabase Realtime ile oyun güncellemelerini canlı olarak dinler.
      * Bağlantı durumunu izler ve gerektiğinde yeniden bağlanmayı tetikler.
      */
-    subscribeToGame: (gameId) => {
+    subscribeToGame: async (gameId) => {
         const currentChannel = get().realtimeChannel;
         if (currentChannel) {
             supabase.removeChannel(currentChannel);
@@ -230,7 +230,8 @@ export const useGameStore = create((set, get) => ({
         set({ realtimeChannel: channel, currentGameId: gameId });
 
         // İlk veriyi çek
-        get().refreshGameData(gameId);
+        await get().refreshGameData(gameId);
+        return { success: true, subscription: channel };
     },
 
     /**
@@ -278,8 +279,9 @@ export const useGameStore = create((set, get) => ({
     /**
      * Mevcut oyunu terk eder.
      */
-    leaveGame: async (userId) => {
+    leaveGame: async (...args) => {
         try {
+            const userId = args.length > 1 ? args[1] : args[0];
             const currentGame = get().currentGame;
             if (!currentGame) return { success: false, error: 'Oyun bulunamadı' };
 
@@ -320,6 +322,82 @@ export const useGameStore = create((set, get) => ({
             return { success: true };
         } catch (error) {
             console.error('Leave game error:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * Oyunu tamamlandı olarak işaretler.
+     */
+    endGame: async (gameId) => {
+        try {
+            const currentGame = get().currentGame;
+            const activeGameId = gameId || currentGame?.id;
+            if (!activeGameId) {
+                return { success: false, error: 'Oyun bulunamadı' };
+            }
+
+            const players = currentGame?.players || [];
+            const activePlayers = players.filter(player => !player.bankrupt_timestamp);
+            const winnerId =
+                activePlayers.length === 1
+                    ? activePlayers[0].user_id
+                    : currentGame?.winner_id || players[0]?.user_id || null;
+
+            const { error } = await supabase
+                .from('games')
+                .update({
+                    winner_id: winnerId,
+                    ending_timestamp: new Date().toISOString()
+                })
+                .eq('id', activeGameId);
+
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('End game error:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * Oyuncuyu iflas ettirir ve gerekirse kazananı belirler.
+     */
+    bankruptPlayer: async (gameId, userId) => {
+        try {
+            const currentGame = get().currentGame;
+            const activeGameId = gameId || currentGame?.id;
+            if (!currentGame || !activeGameId) {
+                return { success: false, error: 'Oyun bulunamadı' };
+            }
+
+            const timestamp = new Date().toISOString();
+            const players = currentGame.players.map(player =>
+                player.user_id === userId && !player.bankrupt_timestamp
+                    ? { ...player, bankrupt_timestamp: timestamp }
+                    : player
+            );
+
+            const nonBankruptPlayers = players.filter(player => !player.bankrupt_timestamp);
+            const winnerId =
+                nonBankruptPlayers.length === 1 && players.length > 1
+                    ? nonBankruptPlayers[0].user_id
+                    : currentGame.winner_id;
+            const endingTimestamp = winnerId ? timestamp : currentGame.ending_timestamp;
+
+            const { error } = await supabase
+                .from('games')
+                .update({
+                    players,
+                    winner_id: winnerId,
+                    ending_timestamp: endingTimestamp
+                })
+                .eq('id', activeGameId);
+
+            if (error) throw error;
+            return { success: true };
+        } catch (error) {
+            console.error('Bankrupt player error:', error);
             return { success: false, error: error.message };
         }
     },
