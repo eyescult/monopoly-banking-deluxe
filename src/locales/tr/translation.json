@@ -144,6 +144,7 @@
     "language": "Dil",
     "english": "İngilizce",
     "turkish": "Türkçe",
+    "german": "Almanca",
     "kicked": "Oyundan Atıldı",
     "kicked_toast": "Oyundan atıldınız!",
     "game_ended_toast": "Oyun kurucu tarafından sonlandırıldı",
@@ -214,5 +215,13 @@
     "last_transactions": "Son İşlemler",
     "no_transactions": "Henüz işlem yapılmamış.",
     "end_game_confirm": "Oyunu sonlandırdığınızda kazanan belirlenecek ve oyun arşive kaldırılacaktır. Devam etmek istiyor musunuz?",
-    "minutes_short": "dk"
+    "minutes_short": "dk",
+    "end_game": "Oyunu Bitir",
+    "properties": "Mülkler",
+    "trades": "Takas",
+    "buy_property": "Mülk Al",
+    "pay_bank": "Bankaya Öde",
+    "salary_amount": "Maaş",
+    "parking_pot": "Otopark Havuzu",
+    "parking_empty": "Otoparkta para yok"
 }

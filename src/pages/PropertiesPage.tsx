@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { useGameStore } from "../store/gameStore";
 import { usePropertyStore, getGroupColor, getPropertyIcon } from "../store/propertyStore";
@@ -54,7 +55,6 @@ function PropertyCard({
   onBuyHouse,
   onSellHouse,
   onToggleMortgage,
-  onSell,
 }: {
   property: Property;
   playerId: string;
@@ -63,10 +63,11 @@ function PropertyCard({
   onBuyHouse: () => void;
   onSellHouse: () => void;
   onToggleMortgage: () => void;
-  onSell: () => void;
 }) {
+  const { t } = useTranslation();
   const isColorProperty = property.type === "property";
   const hasBuildings = property.houses > 0 || property.is_hotel;
+  const fmt = (n: number) => n.toLocaleString();
 
   return (
     <div className="game-card property-card">
@@ -79,32 +80,32 @@ function PropertyCard({
       <div className="game-card-body">
         <div className="property-stats-row">
           <div className="game-stat">
-            <span className="game-stat-label">Price:</span>
-            <span>${property.price.toLocaleString()}</span>
+            <span className="game-stat-label">{t("prop_price")}:</span>
+            <span>${fmt(property.price)}</span>
           </div>
           <div className="game-stat">
-            <span className="game-stat-label">Rent:</span>
-            <span>${property.rent_base.toLocaleString()}</span>
+            <span className="game-stat-label">{t("prop_rent")}:</span>
+            <span>${fmt(property.rent_base)}</span>
           </div>
           {isColorProperty && (
             <>
               <div className="game-stat">
-                <span className="game-stat-label">House cost:</span>
-                <span>${property.house_price.toLocaleString()}</span>
+                <span className="game-stat-label">{t("prop_house_cost")}:</span>
+                <span>${fmt(property.house_price)}</span>
               </div>
             </>
           )}
         </div>
 
         {property.is_mortgaged && (
-          <div className="property-status-badge mortgaged">MORTGAGED</div>
+          <div className="property-status-badge mortgaged">{t("prop_mortgaged")}</div>
         )}
 
         <BuildingIndicator houses={property.houses} isHotel={property.is_hotel} />
 
         {!ownsFull && isColorProperty && (
           <div className="property-hint">
-            Build requires owning the full {property.group_name} group
+            {t("prop_build_hint", { group: property.group_name })}
           </div>
         )}
 
@@ -115,17 +116,17 @@ function PropertyCard({
                 className="btn btn-outline btn-small"
                 disabled={busy || !ownsFull || property.is_mortgaged || property.is_hotel}
                 onClick={onBuyHouse}
-                title={!ownsFull ? "Own the full color group to build" : "Buy a house"}
+                title={!ownsFull ? t("prop_own_full_hint") : t("prop_buy_house")}
               >
-                + House
+                + {t("prop_house")}
               </button>
               <button
                 className="btn btn-outline btn-small"
                 disabled={busy || !hasBuildings}
                 onClick={onSellHouse}
-                title="Sell a house / hotel"
+                title={t("prop_sell_house")}
               >
-                – House
+                – {t("prop_house")}
               </button>
             </>
           )}
@@ -134,14 +135,7 @@ function PropertyCard({
             disabled={busy || hasBuildings}
             onClick={onToggleMortgage}
           >
-            {property.is_mortgaged ? "Unmortgage" : "Mortgage"}
-          </button>
-          <button
-            className="btn btn-danger btn-small"
-            disabled={busy}
-            onClick={onSell}
-          >
-            Sell
+            {property.is_mortgaged ? t("prop_unmortgage") : t("prop_mortgage")}
           </button>
         </div>
       </div>
@@ -151,6 +145,7 @@ function PropertyCard({
 
 export default function PropertiesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuthStore() as { user: AuthUser | null };
   const { currentGame } = useGameStore();
   const {
@@ -158,7 +153,6 @@ export default function PropertiesPage() {
     loading,
     initForLegacyGame,
     buyProperty,
-    sellProperty,
     buyHouse,
     sellHouse,
     toggleMortgage,
@@ -204,9 +198,9 @@ export default function PropertiesPage() {
     const result = await action();
     setBusyProperty(null);
     if (!result.success) {
-      toast.error(result.error || "Action failed");
+      toast.error(result.error || t("error"));
     } else {
-      toast.success("Done!");
+      toast.success(t("transaction_success"));
     }
   };
 
@@ -219,26 +213,26 @@ export default function PropertiesPage() {
             className="section-header"
             style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
           >
-            <h2>My Properties</h2>
+            <h2>{t("my_properties")}</h2>
             <div style={{ display: "flex", gap: 8 }}>
               <Link to="/trades" className="btn btn-outline btn-small">
-                Trades
+                {t("trades")}
               </Link>
               <Link
                 to={currentGame ? `/game/${currentGame.id}` : "/app"}
                 className="btn btn-primary btn-small"
               >
-                ← Back
+                ← {t("return_home")}
               </Link>
             </div>
           </div>
 
-          {loading && <p style={{ marginTop: 12, color: "var(--text-secondary)" }}>Loading properties…</p>}
+          {loading && <p style={{ marginTop: 12, color: "var(--text-secondary)" }}>{t("loading_properties")}</p>}
 
           {/* ------ OWNED PROPERTIES –– grouped by colour ------ */}
           {Object.keys(groupedMine).length === 0 && !loading && (
             <p style={{ marginTop: 20, color: "var(--text-secondary)" }}>
-              You don't own any properties yet.
+              {t("no_properties_owned")}
             </p>
           )}
 
@@ -273,9 +267,6 @@ export default function PropertiesPage() {
                       onToggleMortgage={() =>
                         runAction(property.id, () => toggleMortgage(property.id, user.id))
                       }
-                      onSell={() =>
-                        runAction(property.id, () => sellProperty(property.id, user.id))
-                      }
                     />
                   ))}
                 </div>
@@ -285,9 +276,9 @@ export default function PropertiesPage() {
 
           {/* ------ ALL BOARD PROPERTIES (unowned / for reference) ------ */}
           <div style={{ marginTop: 32 }}>
-            <h3>Board Overview</h3>
+            <h3>{t("board_overview")}</h3>
             <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginBottom: 12 }}>
-              All purchasable properties. Click "Buy" on unowned ones.
+              {t("board_overview_desc")}
             </p>
             <div className="games-list">
               {properties
@@ -295,7 +286,7 @@ export default function PropertiesPage() {
                 .map((property) => {
                   const isOwned = !!property.owner_id;
                   const isMineProp = property.owner_id === user.id;
-                  const ownerLabel = isMineProp ? "You" : isOwned ? "Owned" : "Available";
+                  const ownerLabel = isMineProp ? t("prop_owner_you") : isOwned ? t("prop_owner_other") : t("prop_owner_free");
                   const bandColor = getGroupColor(property.group_name);
 
                   return (
@@ -308,9 +299,8 @@ export default function PropertiesPage() {
                           {property.name}
                         </span>
                         <span
-                          className={`owner-badge ${
-                            isMineProp ? "owner-you" : isOwned ? "owner-other" : "owner-free"
-                          }`}
+                          className={`owner-badge ${isMineProp ? "owner-you" : isOwned ? "owner-other" : "owner-free"
+                            }`}
                         >
                           {ownerLabel}
                         </span>
@@ -318,11 +308,11 @@ export default function PropertiesPage() {
                       <div className="game-card-body">
                         <div className="property-stats-row">
                           <div className="game-stat">
-                            <span className="game-stat-label">Price:</span>
+                            <span className="game-stat-label">{t("prop_price")}:</span>
                             <span>${property.price.toLocaleString()}</span>
                           </div>
                           <div className="game-stat">
-                            <span className="game-stat-label">Rent:</span>
+                            <span className="game-stat-label">{t("prop_rent")}:</span>
                             <span>${property.rent_base.toLocaleString()}</span>
                           </div>
                         </div>
@@ -353,7 +343,7 @@ export default function PropertiesPage() {
                                 runAction(property.id, () => buyProperty(property.id, user.id))
                               }
                             >
-                              Buy ${property.price.toLocaleString()}
+                              {t("prop_buy_for", { price: property.price.toLocaleString() })}
                             </button>
                           </div>
                         )}

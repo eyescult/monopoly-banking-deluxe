@@ -18,8 +18,8 @@ export default function CreateGameModal({ onClose }) {
 
     // Varsayılan oyun ayarları
     const [settings, setSettings] = useState({
-        startingCapital: 1500,
-        salary: 200,
+        startingCapital: 15000000,
+        salary: 2000000,
         enableFreeParking: false
     });
     const [loading, setLoading] = useState(false);
@@ -62,8 +62,8 @@ export default function CreateGameModal({ onClose }) {
                             className="form-input"
                             value={settings.startingCapital}
                             onChange={(e) => setSettings({ ...settings, startingCapital: parseInt(e.target.value) })}
-                            min="100"
-                            step="100"
+                            min="100000"
+                            step="100000"
                             required
                         />
                     </div>
@@ -76,8 +76,8 @@ export default function CreateGameModal({ onClose }) {
                             className="form-input"
                             value={settings.salary}
                             onChange={(e) => setSettings({ ...settings, salary: parseInt(e.target.value) })}
-                            min="50"
-                            step="50"
+                            min="100000"
+                            step="100000"
                             required
                         />
                     </div>

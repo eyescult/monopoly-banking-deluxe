@@ -202,57 +202,57 @@ BEGIN
          b.pr, b.rb, b.hp, b.htp, b.mv
   FROM (VALUES
     -- Specials
-    ( 0,'Start',                NULL,         'special',   0,  0,   0,   0,   0),
-    ( 2,'Gemeinschaftsfeld',    NULL,         'special',   0,  0,   0,   0,   0),
-    ( 4,'Steuer',               NULL,         'special',   0,  0,   0,   0,   0),
-    ( 7,'Chance',               NULL,         'special',   0,  0,   0,   0,   0),
-    (10,'Jail',                 NULL,         'special',   0,  0,   0,   0,   0),
-    (17,'Gemeinschaftsfeld',    NULL,         'special',   0,  0,   0,   0,   0),
-    (20,'Frei Parken',          NULL,         'special',   0,  0,   0,   0,   0),
-    (22,'Chance',               NULL,         'special',   0,  0,   0,   0,   0),
-    (30,'Gehe ins Gefängnis',   NULL,         'special',   0,  0,   0,   0,   0),
-    (33,'Gemeinschaftsfeld',    NULL,         'special',   0,  0,   0,   0,   0),
-    (36,'Chance',               NULL,         'special',   0,  0,   0,   0,   0),
-    (38,'Luxussteuer',          NULL,         'special',   0,  0,   0,   0,   0),
-    -- Brown
-    ( 1,'Checkpoint Charlie',   'Brown',      'property',  60,  2,  50,  50,  30),
-    ( 3,'Siegessäule',          'Brown',      'property',  60,  4,  50,  50,  30),
-    -- Light Blue
-    ( 6,'Oranienburger Straße', 'Light Blue', 'property', 100,  6,  50,  50,  50),
-    ( 8,'Simon-Dach-Straße',    'Light Blue', 'property', 100,  6,  50,  50,  50),
-    ( 9,'Die Hackeschen Höfe',  'Light Blue', 'property', 120,  8,  50,  50,  60),
-    -- Pink
-    (11,'Tiergarten',           'Pink',       'property', 140, 10, 100, 100,  70),
-    (13,'Olympiastadion',       'Pink',       'property', 140, 10, 100, 100,  70),
-    (14,'Strandbad Wannsee',    'Pink',       'property', 160, 12, 100, 100,  80),
+    ( 0,'Start',                NULL,         'special',       0,      0,      0,      0,      0),
+    ( 2,'Gemeinschaftsfeld',    NULL,         'special',       0,      0,      0,      0,      0),
+    ( 4,'Steuer',               NULL,         'special',       0,      0,      0,      0,      0),
+    ( 7,'Chance',               NULL,         'special',       0,      0,      0,      0,      0),
+    (10,'Jail',                 NULL,         'special',       0,      0,      0,      0,      0),
+    (17,'Gemeinschaftsfeld',    NULL,         'special',       0,      0,      0,      0,      0),
+    (20,'Frei Parken',          NULL,         'special',       0,      0,      0,      0,      0),
+    (22,'Chance',               NULL,         'special',       0,      0,      0,      0,      0),
+    (30,'Gehe ins Gefängnis',   NULL,         'special',       0,      0,      0,      0,      0),
+    (33,'Gemeinschaftsfeld',    NULL,         'special',       0,      0,      0,      0,      0),
+    (36,'Chance',               NULL,         'special',       0,      0,      0,      0,      0),
+    (38,'Luxussteuer',          NULL,         'special',       0,      0,      0,      0,      0),
+    -- Brown (Braun)
+    ( 1,'Checkpoint Charlie',   'Brown',      'property',  60000,   2000,  50000,  50000,  30000),
+    ( 3,'Siegessäule',          'Brown',      'property',  60000,   4000,  50000,  50000,  30000),
+    -- Light Blue (Hellblau)
+    ( 6,'Oranienburger Straße', 'Light Blue', 'property', 100000,   6000,  50000,  50000,  50000),
+    ( 8,'Simon-Dach-Straße',    'Light Blue', 'property', 100000,   6000,  50000,  50000,  50000),
+    ( 9,'Die Hackeschen Höfe',  'Light Blue', 'property', 120000,   8000,  50000,  50000,  60000),
+    -- Pink (Rosa)
+    (11,'Tiergarten',           'Pink',       'property', 140000,  10000, 100000, 100000,  70000),
+    (13,'Olympiastadion',       'Pink',       'property', 140000,  10000, 100000, 100000,  70000),
+    (14,'Strandbad Wannsee',    'Pink',       'property', 160000,  12000, 100000, 100000,  80000),
     -- Orange
-    (16,'Brandenburger Tor',    'Orange',     'property', 180, 14, 100, 100,  90),
-    (18,'Gedächtniskirche',     'Orange',     'property', 180, 14, 100, 100,  90),
-    (19,'Reichstag',            'Orange',     'property', 200, 16, 100, 100, 100),
-    -- Red
-    (21,'Tränenpalast',         'Red',        'property', 220, 18, 150, 150, 110),
-    (23,'Museumsinsel',         'Red',        'property', 220, 18, 150, 150, 110),
-    (24,'Philharmonie',         'Red',        'property', 240, 20, 150, 150, 120),
-    -- Yellow
-    (26,'Kollwitzplatz',        'Yellow',     'property', 260, 22, 150, 150, 130),
-    (27,'Gendarmenmarkt',       'Yellow',     'property', 260, 22, 150, 150, 130),
-    (29,'Pariser Platz',        'Yellow',     'property', 280, 24, 150, 150, 140),
-    -- Green
-    (31,'Kurfürstendamm',       'Green',      'property', 300, 26, 200, 200, 150),
-    (32,'Unter den Linden',     'Green',      'property', 300, 26, 200, 200, 150),
-    (34,'Friedrichstraße',      'Green',      'property', 320, 28, 200, 200, 160),
-    -- Dark Blue
-    (37,'KaDeWe',               'Dark Blue',  'property', 350, 35, 200, 200, 175),
-    (39,'Schlossstraße',        'Dark Blue',  'property', 400, 50, 200, 200, 200),
+    (16,'Brandenburger Tor',    'Orange',     'property', 180000,  14000, 100000, 100000,  90000),
+    (18,'Gedächtniskirche',     'Orange',     'property', 180000,  14000, 100000, 100000,  90000),
+    (19,'Reichstag',            'Orange',     'property', 200000,  16000, 100000, 100000, 100000),
+    -- Red (Rot)
+    (21,'Tränenpalast',         'Red',        'property', 220000,  18000, 150000, 150000, 110000),
+    (23,'Museumsinsel',         'Red',        'property', 220000,  18000, 150000, 150000, 110000),
+    (24,'Philharmonie',         'Red',        'property', 240000,  20000, 150000, 150000, 120000),
+    -- Yellow (Gelb)
+    (26,'Kollwitzplatz',        'Yellow',     'property', 260000,  22000, 150000, 150000, 130000),
+    (27,'Gendarmenmarkt',       'Yellow',     'property', 260000,  22000, 150000, 150000, 130000),
+    (29,'Pariser Platz',        'Yellow',     'property', 280000,  24000, 150000, 150000, 140000),
+    -- Green (Grün)
+    (31,'Kurfürstendamm',       'Green',      'property', 300000,  26000, 200000, 200000, 150000),
+    (32,'Unter den Linden',     'Green',      'property', 300000,  26000, 200000, 200000, 150000),
+    (34,'Friedrichstraße',      'Green',      'property', 320000,  28000, 200000, 200000, 160000),
+    -- Dark Blue (Dunkelblau)
+    (37,'KaDeWe',               'Dark Blue',  'property', 350000,  35000, 200000, 200000, 175000),
+    (39,'Schlossstraße',        'Dark Blue',  'property', 400000,  50000, 200000, 200000, 200000),
     -- Railway stations 🚂
-    ( 5,'Bahnhof Zoo',          'White',      'station',  200, 25,   0,   0, 100),
-    (25,'Lehrter Bahnhof',      'White',      'station',  200, 25,   0,   0, 100),
+    ( 5,'Bahnhof Zoo',          'White',      'station',  200000,  25000,      0,      0, 100000),
+    (25,'Lehrter Bahnhof',      'White',      'station',  200000,  25000,      0,      0, 100000),
     -- Airports ✈️
-    (15,'Flughafen Schönefeld', 'White',      'airport',  200, 25,   0,   0, 100),
-    (35,'Flughafen Tegel',      'White',      'airport',  200, 25,   0,   0, 100),
+    (15,'Flughafen Schönefeld', 'White',      'airport',  200000,  25000,      0,      0, 100000),
+    (35,'Flughafen Tegel',      'White',      'airport',  200000,  25000,      0,      0, 100000),
     -- Utilities ⚡
-    (12,'Sony Center',          'White',      'utility',  150, 10,   0,   0,  75),
-    (28,'Fernsehturm',          'White',      'utility',  150, 10,   0,   0,  75)
+    (12,'Sony Center',          'White',      'utility',  150000,  10000,      0,      0,  75000),
+    (28,'Fernsehturm',          'White',      'utility',  150000,  10000,      0,      0,  75000)
   ) AS b(pos,nm,grp,tp,pr,rb,hp,htp,mv);
 END; $$;
 

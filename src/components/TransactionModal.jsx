@@ -272,16 +272,16 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                                     placeholder="0"
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
-                                    min="1"
-                                    step="1"
+                                    min="100000"
+                                    step="100000"
                                     autoFocus
                                     required
                                 />
                             </div>
 
-                            {/* Hızlı Miktar Butonları - Monopoly Para Birimleri */}
+                            {/* Schnellbetrag-Buttons - Monopoly Banking Scal */}
                             <div className="quick-amount-grid">
-                                {[1, 5, 10, 20, 50, 100, 200, 500].map((val) => (
+                                {[100000, 500000, 1000000, 2000000, 5000000, 10000000, 20000000, 50000000].map((val) => (
                                     <button
                                         key={val}
                                         type="button"
@@ -291,7 +291,7 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                                             return (currentVal + val).toString();
                                         })}
                                     >
-                                        +${val}
+                                        +{val >= 1000000 ? `${val / 1000000}M` : `${val / 1000}K`}
                                     </button>
                                 ))}
                             </div>

@@ -213,7 +213,8 @@ export default function GamePage() {
     const formatTime = (isoString) => {
         if (!isoString) return '';
         const date = new Date(isoString);
-        return date.toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'tr-TR', { hour: '2-digit', minute: '2-digit' });
+        const locale = i18n.language === 'en' ? 'en-US' : i18n.language === 'de' ? 'de-DE' : 'tr-TR';
+        return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
     };
 
     /**
@@ -315,13 +316,13 @@ export default function GamePage() {
                         <Globe size={20} />
                         <span>{t('language')}</span>
                     </div>
-                    <div className="language-options" style={{ paddingLeft: '44px', display: 'flex', gap: '8px', marginTop: '8px' }}>
+                    <div className="language-options" style={{ paddingLeft: '44px', display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                         <button
-                            className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-outline'}`}
-                            onClick={() => changeLanguage('tr')}
+                            className={`btn btn-small ${i18n.language === 'de' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => changeLanguage('de')}
                             style={{ flex: 1 }}
                         >
-                            {t('turkish')}
+                            {t('german')}
                         </button>
                         <button
                             className={`btn btn-small ${i18n.language === 'en' ? 'btn-primary' : 'btn-outline'}`}
@@ -329,6 +330,13 @@ export default function GamePage() {
                             style={{ flex: 1 }}
                         >
                             {t('english')}
+                        </button>
+                        <button
+                            className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-outline'}`}
+                            onClick={() => changeLanguage('tr')}
+                            style={{ flex: 1 }}
+                        >
+                            {t('turkish')}
                         </button>
                     </div>
                 </div>
