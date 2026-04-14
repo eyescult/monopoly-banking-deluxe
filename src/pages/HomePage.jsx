@@ -196,13 +196,13 @@ export default function HomePage() {
                             <Globe size={20} />
                             <span>{t('language')}</span>
                         </div>
-                        <div className="language-options" style={{ paddingLeft: '44px', display: 'flex', gap: '8px', marginTop: '8px' }}>
+                        <div className="language-options" style={{ paddingLeft: '44px', display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
                             <button
-                                className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-outline'}`}
-                                onClick={() => changeLanguage('tr')}
+                                className={`btn btn-small ${i18n.language === 'de' ? 'btn-primary' : 'btn-outline'}`}
+                                onClick={() => changeLanguage('de')}
                                 style={{ flex: 1 }}
                             >
-                                {t('turkish')}
+                                {t('german')}
                             </button>
                             <button
                                 className={`btn btn-small ${i18n.language === 'en' ? 'btn-primary' : 'btn-outline'}`}
@@ -210,6 +210,13 @@ export default function HomePage() {
                                 style={{ flex: 1 }}
                             >
                                 {t('english')}
+                            </button>
+                            <button
+                                className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-outline'}`}
+                                onClick={() => changeLanguage('tr')}
+                                style={{ flex: 1 }}
+                            >
+                                {t('turkish')}
                             </button>
                         </div>
                     </div>

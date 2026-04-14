@@ -17,18 +17,21 @@ const LandingPage = () => {
     const langRef = useRef(null);
 
     // Determine language based on path
-    const isTurkish = location.pathname === '/tr' || (location.pathname === '/' && i18n.language && i18n.language.startsWith('tr'));
+    const isGerman  = location.pathname === '/de' || (location.pathname === '/' && i18n.language && i18n.language.startsWith('de'));
+    const isTurkish = location.pathname === '/tr' || (location.pathname === '/' && !isGerman && i18n.language && i18n.language.startsWith('tr'));
 
     useEffect(() => {
         // Redirect from root to detected language
         if (location.pathname === '/') {
-            const detectedLang = (i18n.language && i18n.language.startsWith('tr')) ? 'tr' : 'en';
+            const detectedLang = i18n.language?.startsWith('de') ? 'de' : i18n.language?.startsWith('tr') ? 'tr' : 'en';
             navigate(`/${detectedLang}`, { replace: true });
             return;
         }
 
         if (location.pathname === '/tr') {
             i18n.changeLanguage('tr');
+        } else if (location.pathname === '/de') {
+            i18n.changeLanguage('de');
         } else if (location.pathname === '/en') {
             i18n.changeLanguage('en');
         }
@@ -58,7 +61,7 @@ const LandingPage = () => {
         setIsLangOpen(false);
     };
 
-    const currentLang = isTurkish ? 'tr' : 'en';
+    const currentLang = isTurkish ? 'tr' : isGerman ? 'de' : 'en';
 
     return (
         <div className="lp-wrapper">
@@ -97,17 +100,21 @@ const LandingPage = () => {
                         <div className={`lp-lang-switcher ${isLangOpen ? 'active' : ''}`} ref={langRef}>
                             <button className="lp-lang-btn" onClick={() => setIsLangOpen(!isLangOpen)}>
                                 <Globe size={16} />
-                                <span>{isTurkish ? 'Türkçe' : 'English'}</span>
+                                <span>{isTurkish ? 'Türkçe' : isGerman ? 'Deutsch' : 'English'}</span>
                                 <ChevronDown size={14} style={{ transform: isLangOpen ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />
                             </button>
                             <div className="lp-lang-dropdown">
-                                <div className="lp-lang-option" onClick={() => changeLanguage('tr')}>
-                                    <span>Türkçe</span>
-                                    {isTurkish && <Check size={14} color="var(--lp-primary)" />}
+                                <div className="lp-lang-option" onClick={() => changeLanguage('de')}>
+                                    <span>Deutsch</span>
+                                    {isGerman && <Check size={14} color="var(--lp-primary)" />}
                                 </div>
                                 <div className="lp-lang-option" onClick={() => changeLanguage('en')}>
                                     <span>English</span>
-                                    {!isTurkish && <Check size={14} color="var(--lp-primary)" />}
+                                    {!isTurkish && !isGerman && <Check size={14} color="var(--lp-primary)" />}
+                                </div>
+                                <div className="lp-lang-option" onClick={() => changeLanguage('tr')}>
+                                    <span>Türkçe</span>
+                                    {isTurkish && <Check size={14} color="var(--lp-primary)" />}
                                 </div>
                             </div>
                         </div>

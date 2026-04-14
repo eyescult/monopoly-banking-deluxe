@@ -111,17 +111,24 @@ export default function LoginPage() {
         <div className="login-page">
             <div className="language-switcher" style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
                 <button
-                    className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-ghost'}`}
-                    onClick={() => changeLanguage('tr')}
+                    className={`btn btn-small ${i18n.language === 'de' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => changeLanguage('de')}
                     style={{ marginRight: '8px' }}
                 >
-                    TR
+                    DE
                 </button>
                 <button
                     className={`btn btn-small ${i18n.language === 'en' ? 'btn-primary' : 'btn-ghost'}`}
                     onClick={() => changeLanguage('en')}
+                    style={{ marginRight: '8px' }}
                 >
                     EN
+                </button>
+                <button
+                    className={`btn btn-small ${i18n.language === 'tr' ? 'btn-primary' : 'btn-ghost'}`}
+                    onClick={() => changeLanguage('tr')}
+                >
+                    TR
                 </button>
             </div>
 
