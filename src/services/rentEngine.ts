@@ -25,6 +25,14 @@ const RENT_TABLE: Record<string, number[]> = {
   "Schlossstraße": [2000000, 6000000, 14000000, 17000000, 20000000]
 };
 
+function isTransport(p: Property) {
+  return p.type === "station" || p.type === "airport" || p.name.includes("Bahnhof") || p.name.includes("Flughafen");
+}
+
+function isUtility(p: Property) {
+  return p.type === "utility" || p.name === "Sony Center" || p.name === "Fernsehturm";
+}
+
 export function calculateRent(
   property: Property,
   allProperties: Property[],
@@ -32,7 +40,25 @@ export function calculateRent(
 ): number {
   if (property.is_mortgaged || property.type === "special") return 0;
 
-  if (property.type === "property") {
+  if (isTransport(property)) {
+    const ownedStations = allProperties.filter(
+      (p) => isTransport(p) && p.owner_id && p.owner_id === property.owner_id
+    ).length;
+    if (ownedStations <= 1) return 250000;
+    if (ownedStations === 2) return 500000;
+    if (ownedStations === 3) return 1000000;
+    if (ownedStations >= 4) return 2000000;
+  }
+
+  if (isUtility(property)) {
+    const ownedUtilities = allProperties.filter(
+      (p) => isUtility(p) && p.owner_id && p.owner_id === property.owner_id
+    ).length;
+    const multiplier = ownedUtilities >= 2 ? 10 : 4;
+    return Math.max(0, (diceValue || 1) * multiplier * 10000);
+  }
+
+  if (property.type === "property" && !isTransport(property) && !isUtility(property)) {
     if (property.houses === 0 && !property.is_hotel) {
       return property.rent_base;
     }
@@ -43,25 +69,6 @@ export function calculateRent(
     }
     const houseMultiplier = property.is_hotel ? 5 : 1 + property.houses;
     return Math.max(0, property.rent_base * houseMultiplier);
-  }
-
-  if (property.type === "station" || property.type === "airport") {
-    const ownedStations = allProperties.filter(
-      (p) => (p.type === "station" || p.type === "airport") && p.owner_id && p.owner_id === property.owner_id
-    ).length;
-    if (ownedStations === 1) return 250000;
-    if (ownedStations === 2) return 500000;
-    if (ownedStations === 3) return 1000000;
-    if (ownedStations >= 4) return 2000000;
-    return property.rent_base;
-  }
-
-  if (property.type === "utility") {
-    const ownedUtilities = allProperties.filter(
-      (p) => p.type === "utility" && p.owner_id && p.owner_id === property.owner_id
-    ).length;
-    const multiplier = ownedUtilities >= 2 ? 10 : 4;
-    return Math.max(0, (diceValue || 1) * multiplier * 10000);
   }
 
   return 0;
