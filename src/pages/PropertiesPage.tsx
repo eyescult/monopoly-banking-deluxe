@@ -227,6 +227,33 @@ export default function PropertiesPage() {
     return sortedGroups;
   }, [mine]);
 
+  // Group ALL properties by color group for display
+  const groupedAll = useMemo(() => {
+    const groups: Record<string, Property[]> = {};
+    const validProps = properties.filter((p) => p.type !== "special");
+    for (const p of validProps) {
+      const key = p.group_name ?? p.type;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(p);
+    }
+    
+    // Sort keys by traditional monopoly order
+    const sortedGroups: Record<string, Property[]> = {};
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      const orderA = COLOR_ORDER[a] ?? 99;
+      const orderB = COLOR_ORDER[b] ?? 99;
+      return orderA - orderB;
+    });
+    
+    for (const key of sortedKeys) {
+      sortedGroups[key] = groups[key];
+      // Sort properties inside group by position
+      sortedGroups[key].sort((a, b) => a.position - b.position);
+    }
+    
+    return sortedGroups;
+  }, [properties]);
+
   if (!user) {
     navigate("/login");
     return null;
@@ -324,89 +351,95 @@ export default function PropertiesPage() {
               {t("board_overview_desc")}
             </p>
             <div className="games-list">
-              {[...properties]
-                .filter((p) => p.type !== "special")
-                .sort((a, b) => {
-                  const orderA = COLOR_ORDER[a.group_name ?? a.type] ?? 99;
-                  const orderB = COLOR_ORDER[b.group_name ?? b.type] ?? 99;
-                  if (orderA !== orderB) return orderA - orderB;
-                  return a.position - b.position;
-                })
-                .map((property) => {
-                  const isOwned = !!property.owner_id;
-                  const isMineProp = property.owner_id === user.id;
-                  const ownerLabel = isMineProp ? t("prop_owner_you") : isOwned ? t("prop_owner_other") : t("prop_owner_free");
-                  const bandColor = getGroupColor(property.group_name);
-
-                  return (
-                    <div key={property.id} className="game-card property-card">
-                      <ColorBand groupName={property.group_name} type={property.type} />
-                      <div className="game-card-header">
-                        <span>
-                          <strong>#{property.position}</strong>{" "}
-                          {getPropertyIcon(property.type)}{" "}
-                          {property.name}
-                        </span>
-                        <span
-                          className={`owner-badge ${isMineProp ? "owner-you" : isOwned ? "owner-other" : "owner-free"
-                            }`}
-                        >
-                          {ownerLabel}
-                        </span>
-                      </div>
-                      <div className="game-card-body">
-                        <div className="property-stats-row">
-                          <div className="game-stat">
-                            <span className="game-stat-label">{t("prop_price")}:</span>
-                            <span>${property.price.toLocaleString()}</span>
-                          </div>
-                          <div className="game-stat">
-                            <span className="game-stat-label">{t("prop_rent")}:</span>
-                            <span>{isUtility(property) ? "Dice Multiplier" : `$${calculateRent(property, properties).toLocaleString()}`}</span>
-                          </div>
-                        </div>
-
-                        {isUtility(property) && (
-                          <div className="property-hint" style={{ marginTop: 8, fontSize: '0.8rem', textAlign: 'left' }}>
-                            If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.<br/>
-                            If you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.
-                          </div>
-                        )}
-                        {/* Show buildings on board overview too */}
-                        <BuildingIndicator houses={property.houses} isHotel={property.is_hotel} />
-                        <div
-                          className="property-group-dot"
-                          style={{
-                            display: "inline-block",
-                            width: 12,
-                            height: 12,
-                            borderRadius: "50%",
-                            backgroundColor: bandColor,
-                            marginTop: 6,
-                            marginRight: 4,
-                          }}
-                        />
-                        <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                          {property.group_name ?? property.type}
-                        </span>
-
-                        {!isOwned && (
-                          <div style={{ marginTop: 10 }}>
-                            <button
-                              className="btn btn-primary btn-small"
-                              disabled={busyProperty === property.id}
-                              onClick={() =>
-                                runAction(property.id, () => buyProperty(property.id, user.id))
-                              }
-                            >
-                              {t("prop_buy_for", { price: property.price.toLocaleString() })}
-                            </button>
-                          </div>
-                        )}
-                      </div>
+              {Object.entries(groupedAll).map(([groupKey, props]) => {
+                const sampleColor = getGroupColor(props[0].group_name);
+                return (
+                  <div key={`all-${groupKey}`} style={{ marginTop: 24 }}>
+                    <div
+                      className="group-heading"
+                      style={{ borderLeft: `4px solid ${sampleColor}`, paddingLeft: 10, marginBottom: 10 }}
+                    >
+                      <h3 style={{ margin: 0 }}>{groupKey}</h3>
                     </div>
-                  );
-                })}
+                    <div>
+                      {props.map((property) => {
+                        const isOwned = !!property.owner_id;
+                        const isMineProp = property.owner_id === user.id;
+                        const ownerLabel = isMineProp ? t("prop_owner_you") : isOwned ? t("prop_owner_other") : t("prop_owner_free");
+                        const bandColor = getGroupColor(property.group_name);
+
+                        return (
+                          <div key={property.id} className="game-card property-card" style={{ marginBottom: 16 }}>
+                            <ColorBand groupName={property.group_name} type={property.type} />
+                            <div className="game-card-header">
+                              <span>
+                                <strong>#{property.position}</strong>{" "}
+                                {getPropertyIcon(property.type)}{" "}
+                                {property.name}
+                              </span>
+                              <span
+                                className={`owner-badge ${isMineProp ? "owner-you" : isOwned ? "owner-other" : "owner-free"}`}
+                              >
+                                {ownerLabel}
+                              </span>
+                            </div>
+                            <div className="game-card-body">
+                              <div className="property-stats-row">
+                                <div className="game-stat">
+                                  <span className="game-stat-label">{t("prop_price")}:</span>
+                                  <span>${property.price.toLocaleString()}</span>
+                                </div>
+                                <div className="game-stat">
+                                  <span className="game-stat-label">{t("prop_rent")}:</span>
+                                  <span>{isUtility(property) ? "Dice Multiplier" : `$${calculateRent(property, properties).toLocaleString()}`}</span>
+                                </div>
+                              </div>
+
+                              {isUtility(property) && (
+                                <div className="property-hint" style={{ marginTop: 8, fontSize: '0.8rem', textAlign: 'left' }}>
+                                  If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.<br/>
+                                  If you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.
+                                </div>
+                              )}
+                              {/* Show buildings on board overview too */}
+                              <BuildingIndicator houses={property.houses} isHotel={property.is_hotel} />
+                              <div
+                                className="property-group-dot"
+                                style={{
+                                  display: "inline-block",
+                                  width: 12,
+                                  height: 12,
+                                  borderRadius: "50%",
+                                  backgroundColor: bandColor,
+                                  marginTop: 6,
+                                  marginRight: 4,
+                                }}
+                              />
+                              <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+                                {property.group_name ?? property.type}
+                              </span>
+
+                              {!isOwned && (
+                                <div style={{ marginTop: 10 }}>
+                                  <button
+                                    className="btn btn-primary btn-small"
+                                    disabled={busyProperty === property.id}
+                                    onClick={() =>
+                                      runAction(property.id, () => buyProperty(property.id, user.id))
+                                    }
+                                  >
+                                    {t("prop_buy_for", { price: property.price.toLocaleString() })}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
