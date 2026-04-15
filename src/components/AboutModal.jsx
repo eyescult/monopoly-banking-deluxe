@@ -1,4 +1,4 @@
-import { X, Coffee } from 'lucide-react';
+﻿import { X, Coffee } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function AboutModal({ onClose }) {
@@ -16,7 +16,7 @@ export default function AboutModal({ onClose }) {
 
                 <div className="about-content">
                     <div className="about-hero">
-                        <h1 className="about-app-title">Monopoly Digital Banking</h1>
+                        <h1 className="about-app-title">Monopoly --Banking Deluxe-</h1>
                         <div className="about-version">{t('version')} 1.2.1</div>
                     </div>
 
@@ -89,4 +89,5 @@ export default function AboutModal({ onClose }) {
         </div>
     );
 }
+
 

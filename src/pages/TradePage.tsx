@@ -399,10 +399,10 @@ export default function TradePage() {
             )}
             <div className="games-list">
               {trades.map((trade) => {
-                const isIncoming = trade.to_player === user.id;
-                const isOutgoing = trade.from_player === user.id;
-                const fromName = playerName(trade.from_player, players);
-                const toName = playerName(trade.to_player, players);
+                const isIncoming = trade.to_user_id === user.id;
+                const isOutgoing = trade.from_user_id === user.id;
+                const fromName = playerName(trade.from_user_id, players);
+                const toName = playerName(trade.to_user_id, players);
 
                 // Check if incoming acceptance will trigger building auto-sells
                 const incomingOfferedBuildingWarn = trade.offered_properties.some((id) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+﻿import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
@@ -236,8 +236,8 @@ export default function HomePage() {
                     <div className="header-content">
                         <div className="header-left">
                             <div className="header-logo-container">
-                                <img src={logo} alt="Monopoly Digital Banking" className="header-logo light-mode-logo" />
-                                <img src={logoDark} alt="Monopoly Digital Banking" className="header-logo dark-mode-logo" />
+                                <img src={logo} alt="Monopoly --Banking Deluxe-" className="header-logo light-mode-logo" />
+                                <img src={logoDark} alt="Monopoly --Banking Deluxe-" className="header-logo dark-mode-logo" />
                             </div>
                         </div>
                         <div className="header-right">
@@ -409,4 +409,5 @@ export default function HomePage() {
         </div>
     );
 }
+
 

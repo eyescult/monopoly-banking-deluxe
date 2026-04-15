@@ -1,9 +1,9 @@
-# 🏦 Monopoly Digital Banking
+﻿# 🏦 Monopoly --Banking Deluxe-
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Donate-yellow.svg?style=flat-square&logo=buy-me-a-coffee)](https://buymeacoffee.com/tnyligokhan)
 
 > 🇹🇷 Türkçe dokümantasyon için [buraya tıklayın](README.tr.md).
 
-> **Monopoly Digital Banking** (formerly Monopoly Mobile Banking) is a modern, real-time **digital banking** application developed for the Monopoly board game. Forget paper money, manage your transactions from your pocket with the **Monopoly Digital Banking** experience!
+> **Monopoly --Banking Deluxe-** (formerly Monopoly Mobile Banking) is a modern, real-time **digital banking** application developed for the Monopoly board game. Forget paper money, manage your transactions from your pocket with the **Monopoly --Banking Deluxe-** experience!
 
 ![Version](https://img.shields.io/badge/version-1.2.1-blue.svg?style=flat&logo=git)
 ![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)
@@ -14,9 +14,9 @@
 
 ## 🌟 About The Project
 
-**Monopoly Digital Banking** is a free web application that eliminates the clutter of paper money in the classic Monopoly game, allowing players to transfer money to each other or the bank in seconds. It carries the features of **Monopoly Digital Banking** while offering a unique gaming pleasure with its modern interface.
+**Monopoly --Banking Deluxe-** is a free web application that eliminates the clutter of paper money in the classic Monopoly game, allowing players to transfer money to each other or the bank in seconds. It carries the features of **Monopoly --Banking Deluxe-** while offering a unique gaming pleasure with its modern interface.
 
-Thanks to the Supabase infrastructure, all transactions are synchronized in **Realtime**. When a player sends money, the other party's balance is updated instantly. Whether you call it Monopoly Digital Banking or electronic bank, your game is now much faster!
+Thanks to the Supabase infrastructure, all transactions are synchronized in **Realtime**. When a player sends money, the other party's balance is updated instantly. Whether you call it Monopoly --Banking Deluxe- or electronic bank, your game is now much faster!
 
 ## ✨ Key Features
 
@@ -97,3 +97,4 @@ This project is licensed under the [MIT](LICENSE) license.
 Developed by **Gökhan Ton**
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://buymeacoffee.com/tnyligokhan)
+

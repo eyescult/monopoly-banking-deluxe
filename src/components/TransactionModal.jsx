@@ -272,8 +272,8 @@ export default function TransactionModal({ game, currentPlayer, onClose, initial
                                     placeholder="0"
                                     value={amount}
                                     onChange={(e) => setAmount(e.target.value)}
-                                    min="100000"
-                                    step="100000"
+                                    min="1000"
+                                    step="1000"
                                     autoFocus
                                     required
                                 />

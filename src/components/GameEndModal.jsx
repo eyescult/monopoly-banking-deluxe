@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, Clock, Share2, Home } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -90,7 +90,7 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Monopoly Digital Banking',
+                    title: 'Monopoly --Banking Deluxe-',
                     text: message
                 });
             } catch {
@@ -155,4 +155,5 @@ export default function GameEndModal({ game, currentPlayer, winner, onClose, onL
         </div>
     );
 }
+
 

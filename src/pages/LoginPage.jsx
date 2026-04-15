@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { LogIn, Mail, Lock, User as UserIcon, Globe } from 'lucide-react';
@@ -134,8 +134,8 @@ export default function LoginPage() {
 
             <div className="login-container fade-in">
                 <div className="login-logo">
-                    <img src={logo} alt="Monopoly Digital Banking" className="app-logo light-mode-logo" />
-                    <img src={logoDark} alt="Monopoly Digital Banking" className="app-logo dark-mode-logo" />
+                    <img src={logo} alt="Monopoly --Banking Deluxe-" className="app-logo light-mode-logo" />
+                    <img src={logoDark} alt="Monopoly --Banking Deluxe-" className="app-logo dark-mode-logo" />
                 </div>
 
                 <p className="login-subtitle">
@@ -262,4 +262,5 @@ export default function LoginPage() {
         </div>
     );
 }
+
 

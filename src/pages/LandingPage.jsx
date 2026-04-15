@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -66,7 +66,7 @@ const LandingPage = () => {
     return (
         <div className="lp-wrapper">
             <Helmet>
-                <title>{isTurkish ? 'Monopoly Dijital Bankacılık' : 'Monopoly Digital Banking'}</title>
+                <title>{isTurkish ? 'Monopoly --Banking Deluxe-' : 'Monopoly --Banking Deluxe-'}</title>
                 <meta name="description" content={isTurkish
                     ? "Monopoly oyunlarınızı dijitalleştirin! Kağıt paraları unutun, hızlı ve güvenli para transferi ile oyun keyfini katlayın. Ücretsiz hemen başlayın."
                     : "Digitize your Monopoly games! Forget paper money, enjoy fast and secure money transfers. Start for free now."}
@@ -75,7 +75,7 @@ const LandingPage = () => {
                 <link rel="alternate" hrefLang="tr" href="https://monopoly-digital-banking.vercel.app/tr" />
                 <link rel="alternate" hrefLang="en" href="https://monopoly-digital-banking.vercel.app/en" />
                 <link rel="alternate" hrefLang="x-default" href="https://monopoly-digital-banking.vercel.app/" />
-                <meta property="og:title" content={isTurkish ? 'Monopoly Dijital Bankacılık' : 'Monopoly Digital Banking'} />
+                <meta property="og:title" content={isTurkish ? 'Monopoly --Banking Deluxe-' : 'Monopoly --Banking Deluxe-'} />
                 <meta property="og:description" content={isTurkish ? 'Arkadaşlarınızla Monopoly oynarken parayı dijital yönetin.' : 'Manage money digitally while playing Monopoly with friends.'} />
                 <meta property="og:type" content="website" />
                 <meta property="og:url" content={`https://monopoly-digital-banking.vercel.app${location.pathname}`} />
@@ -91,8 +91,8 @@ const LandingPage = () => {
             <nav className="lp-nav">
                 <div className="lp-container">
                     <Link to={isTurkish ? "/tr" : "/en"} className="lp-logo">
-                        <img src={logo} alt="Monopoly Digital Banking" className="lp-logo-img lp-logo-light" />
-                        <img src={logoDark} alt="Monopoly Digital Banking" className="lp-logo-img lp-logo-dark" />
+                        <img src={logo} alt="Monopoly --Banking Deluxe-" className="lp-logo-img lp-logo-light" />
+                        <img src={logoDark} alt="Monopoly --Banking Deluxe-" className="lp-logo-img lp-logo-dark" />
                     </Link>
 
                     <div className="lp-nav-actions">
@@ -182,8 +182,8 @@ const LandingPage = () => {
                 <div className="lp-footer-content">
                     <div className="lp-footer-left">
                         <Link to={isTurkish ? "/tr" : "/en"} className="lp-logo">
-                            <img src={logo} alt="Monopoly Digital Banking" className="lp-logo-img lp-logo-light" style={{ height: '24px' }} />
-                            <img src={logoDark} alt="Monopoly Digital Banking" className="lp-logo-img lp-logo-dark" style={{ height: '24px' }} />
+                            <img src={logo} alt="Monopoly --Banking Deluxe-" className="lp-logo-img lp-logo-light" style={{ height: '24px' }} />
+                            <img src={logoDark} alt="Monopoly --Banking Deluxe-" className="lp-logo-img lp-logo-dark" style={{ height: '24px' }} />
                         </Link>
                         <p className="lp-copyright">
                             © 2025. {isTurkish ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}
@@ -212,4 +212,5 @@ const FeatureCard = ({ icon, title, desc, index }) => (
 );
 
 export default LandingPage;
+
 
