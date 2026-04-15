@@ -232,7 +232,7 @@ BEGIN
     -- Red (Rot) – 2.2–2.4 Mio.
     (21,'Tränenpalast',         'Red',        'property',   2200000,  180000, 1500000, 1500000, 1100000),
     (23,'Museumsinsel',         'Red',        'property',   2200000,  180000, 1500000, 1500000, 1100000),
-    (24,'Philharmonie',         'Red',        'property',   2400000,  200000, 1500000, 1500000, 1200000),
+    (24,'Berliner Philharmonie', 'Red',        'property',   2400000,  200000, 1500000, 1500000, 1200000),
     -- Yellow (Gelb) – 2.6–2.8 Mio.
     (26,'Kollwitzplatz',        'Yellow',     'property',   2600000,  220000, 1500000, 1500000, 1300000),
     (27,'Gendarmenmarkt',       'Yellow',     'property',   2600000,  220000, 1500000, 1500000, 1300000),
@@ -245,14 +245,14 @@ BEGIN
     (37,'KaDeWe',               'Dark Blue',  'property',   3500000,  350000, 2000000, 2000000, 1750000),
     (39,'Schlossstraße',        'Dark Blue',  'property',   4000000,  500000, 2000000, 2000000, 2000000),
     -- Railway stations 🚂 – 2.0 Mio.
-    ( 5,'Bahnhof Zoo',          'White',      'station',    2000000,  250000,       0,       0, 1000000),
-    (25,'Lehrter Bahnhof',      'White',      'station',    2000000,  250000,       0,       0, 1000000),
+    ( 5,'Bahnhof Zoo',          'Trainstations/Airfields', 'station',    2000000,  250000,       0,       0, 1000000),
+    (25,'Lehrter Bahnhof',      'Trainstations/Airfields', 'station',    2000000,  250000,       0,       0, 1000000),
     -- Airports ✈️ – 2.0 Mio.
-    (15,'Flughafen Schönefeld', 'White',      'airport',    2000000,  250000,       0,       0, 1000000),
-    (35,'Flughafen Tegel',      'White',      'airport',    2000000,  250000,       0,       0, 1000000),
+    (15,'Flughafen Schönefeld', 'Trainstations/Airfields', 'airport',    2000000,  250000,       0,       0, 1000000),
+    (35,'Flughafen Tegel',      'Trainstations/Airfields', 'airport',    2000000,  250000,       0,       0, 1000000),
     -- Utilities ⚡ (Medienzentrum) – 1.5 Mio.
-    (12,'Sony Center',          'White',      'utility',    1500000,  100000,       0,       0,  750000),
-    (28,'Fernsehturm',          'White',      'utility',    1500000,  100000,       0,       0,  750000)
+    (12,'Sony Center',          'Mediacenters', 'utility',    1500000,  100000,       0,       0,  750000),
+    (28,'Fernsehturm',          'Mediacenters', 'utility',    1500000,  100000,       0,       0,  750000)
   ) AS b(pos,nm,grp,tp,pr,rb,hp,htp,mv);
 END; $$;
 

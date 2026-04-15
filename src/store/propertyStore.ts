@@ -72,6 +72,8 @@ export function getGroupColor(groupName: string | null): string {
     Green: "#006400",
     "Dark Blue": "#00008B",
     White: "#AAAAAA", // stations, airports & utilities
+    "Trainstations/Airfields": "#AAAAAA",
+    "Mediacenters": "#AAAAAA",
   };
   return map[groupName] ?? "#888888";
 }
