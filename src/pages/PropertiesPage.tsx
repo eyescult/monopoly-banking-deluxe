@@ -105,7 +105,7 @@ function PropertyCard({
           </div>
           <div className="game-stat">
             <span className="game-stat-label">{t("prop_rent")}:</span>
-            <span>{isUtility(property) ? "Dice Multiplier" : `$${fmt(actualRent)}`}</span>
+            <span>{isUtility(property) ? t("prop_rent_dice_multiplier") : `$${fmt(actualRent)}`}</span>
           </div>
           {isColorProperty && (
             <>
@@ -119,8 +119,9 @@ function PropertyCard({
 
         {isUtility(property) && (
           <div className="property-hint" style={{ marginTop: 8, textAlign: "left" }}>
-            If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.<br/>
-            If you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.
+            {t("prop_rent_mediacenter_desc").split('\n').map((line, i) => (
+              <span key={i}>{line}<br/></span>
+            ))}
           </div>
         )}
 
@@ -391,14 +392,15 @@ export default function PropertiesPage() {
                                 </div>
                                 <div className="game-stat">
                                   <span className="game-stat-label">{t("prop_rent")}:</span>
-                                  <span>{isUtility(property) ? "Dice Multiplier" : `$${calculateRent(property, properties).toLocaleString()}`}</span>
+                                  <span>{isUtility(property) ? t("prop_rent_dice_multiplier") : `$${calculateRent(property, properties).toLocaleString()}`}</span>
                                 </div>
                               </div>
 
                               {isUtility(property) && (
                                 <div className="property-hint" style={{ marginTop: 8, fontSize: '0.8rem', textAlign: 'left' }}>
-                                  If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.<br/>
-                                  If you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.
+                                  {t("prop_rent_mediacenter_desc").split('\n').map((line, i) => (
+                                    <span key={i}>{line}<br/></span>
+                                  ))}
                                 </div>
                               )}
                               {/* Show buildings on board overview too */}

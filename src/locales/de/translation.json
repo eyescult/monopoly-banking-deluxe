@@ -1,4 +1,4 @@
-﻿{
+{
     "welcome_back": "Willkommen, {{name}}! 👋",
     "welcome_subtitle": "Starte ein neues Spiel oder tritt einem bestehenden bei",
     "total_games": "Gespielte Spiele",
@@ -243,5 +243,7 @@
     "prop_owner_you": "Du",
     "prop_owner_other": "Besetzt",
     "prop_owner_free": "Frei",
-    "prop_buy_for": "Kaufen für ${{price}}"
+    "prop_buy_for": "Kaufen für ${{price}}",
+    "prop_rent_dice_multiplier": "Würfel-Multiplikator",
+    "prop_rent_mediacenter_desc": "Wenn du ein Medienzentrum besitzt, beträgt die Miete das Vierfache der gewürfelten Augenzahl multipliziert mit 10.000.\nWenn du beide Medienzentren besitzt, beträgt die Miete das Zehnfache der gewürfelten Augenzahl multipliziert mit 10.000."
 }

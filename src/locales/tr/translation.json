@@ -1,4 +1,4 @@
-﻿{
+{
     "welcome_back": "Merhaba, {{name}}! 👋",
     "welcome_subtitle": "Yeni bir oyun başlatın veya mevcut bir oyuna katılın",
     "total_games": "Oynanan Oyun",
@@ -223,5 +223,27 @@
     "pay_bank": "Bankaya Öde",
     "salary_amount": "Maaş",
     "parking_pot": "Otopark Havuzu",
-    "parking_empty": "Otoparkta para yok"
+    "parking_empty": "Otoparkta para yok",
+    "my_properties": "Mülklerim",
+    "board_overview": "Oyun Tahtası Özeti",
+    "board_overview_desc": "Satın alınabilir tüm mülkler. Boş olanlarda 'Satın Al'a tıklayın.",
+    "no_properties_owned": "Henüz hiçbir mülkünüz yok.",
+    "loading_properties": "Mülkler yükleniyor...",
+    "prop_price": "Fiyat",
+    "prop_rent": "Kira",
+    "prop_house_cost": "Ev maliyeti",
+    "prop_mortgaged": "İPOTEKLİ",
+    "prop_house": "Ev",
+    "prop_buy_house": "Ev inşa et",
+    "prop_sell_house": "Ev / otel sat",
+    "prop_mortgage": "İpotek Et",
+    "prop_unmortgage": "İpoteği Kaldır",
+    "prop_build_hint": "İnşa etmek için tüm {{group}} grubuna sahip ol",
+    "prop_own_full_hint": "İnşa etmek için tüm renklere sahip ol",
+    "prop_owner_you": "Senin",
+    "prop_owner_other": "Sahibi Var",
+    "prop_owner_free": "Müsait",
+    "prop_buy_for": "${{price}} karşılığında al",
+    "prop_rent_dice_multiplier": "Zar Çarpanı",
+    "prop_rent_mediacenter_desc": "Bir medya merkezine sahipseniz, kira atılan zarın dört katının 10.000 ile çarpımıdır.\nİki medya merkezine de sahipseniz, kira atılan zarın on katının 10.000 ile çarpımıdır."
 }
