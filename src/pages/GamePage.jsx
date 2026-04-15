@@ -434,63 +434,7 @@ export default function GamePage() {
                 </button>
             </div>
 
-            {/* Inline Buy Properties Section */}
-            {properties.filter(p => !p.owner_id && p.type !== 'special').length > 0 && (
-                <div className="players-section fade-in-up">
-                    <div className="section-header">
-                        <h3><ShoppingCart size={18} style={{ marginRight: 6, verticalAlign: 'middle' }} />{t('buy_property') || 'Buy Property'}</h3>
-                    </div>
-                    <div className="games-list" style={{ maxHeight: 320, overflowY: 'auto' }}>
-                        {properties
-                            .filter(p => !p.owner_id && p.type !== 'special')
-                            .map(p => {
-                                const color = getGroupColor(p.group_name);
-                                return (
-                                    <div key={p.id} className="game-card property-card" style={{ marginBottom: 8 }}>
-                                        <div style={{ height: 6, width: '100%', borderRadius: '8px 8px 0 0', backgroundColor: color }} />
-                                        <div className="game-card-header" style={{ padding: '8px 12px' }}>
-                                            <span style={{ fontSize: '0.9rem' }}>
-                                                <strong>#{p.position}</strong>{' '}
-                                                {getPropertyIcon(p.type)}{' '}
-                                                {p.name}
-                                            </span>
-                                            <span style={{
-                                                fontSize: '0.7rem', padding: '2px 6px', borderRadius: 'var(--radius-full)',
-                                                background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--text-secondary)'
-                                            }}>
-                                                {p.group_name || p.type}
-                                            </span>
-                                        </div>
-                                        <div className="game-card-body" style={{ padding: '4px 12px 10px' }}>
-                                            <div style={{ display: 'flex', gap: 16, fontSize: '0.85rem', marginBottom: 6 }}>
-                                                <span><strong>${p.price.toLocaleString()}</strong></span>
-                                                <span style={{ color: 'var(--text-secondary)' }}>Rent: ${p.rent_base}</span>
-                                            </div>
-                                            <button
-                                                className="btn btn-primary btn-small"
-                                                disabled={isBankrupt || buyingProperty === p.id || currentPlayer.balance < p.price}
-                                                onClick={async () => {
-                                                    setBuyingProperty(p.id);
-                                                    const result = await buyProperty(p.id, user.id);
-                                                    if (result.success) {
-                                                        // Deduct from legacy balance
-                                                        await refreshGameData(gameId);
-                                                        toast.success(`Bought ${p.name}!`);
-                                                    } else {
-                                                        toast.error(result.error || 'Purchase failed');
-                                                    }
-                                                    setBuyingProperty(null);
-                                                }}
-                                            >
-                                                {buyingProperty === p.id ? 'Buying…' : `Buy $${p.price.toLocaleString()}`}
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                    </div>
-                </div>
-            )}
+
 
             {/* Oyuncu Listesi (Transfer için) */}
             <div className="players-section fade-in-up">

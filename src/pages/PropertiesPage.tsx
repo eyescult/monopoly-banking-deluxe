@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { useGameStore } from "../store/gameStore";
 import { usePropertyStore, getGroupColor, getPropertyIcon } from "../store/propertyStore";
-import { calculateRent } from "../services/rentEngine";
+import { calculateRent, isUtility } from "../services/rentEngine";
 import type { Property } from "../types/berlin";
 
 // Extend the authStore user type to include current_game_id
@@ -13,6 +13,23 @@ type AuthUser = {
   id: string;
   name?: string;
   current_game_id?: string | null;
+};
+
+const COLOR_ORDER: Record<string, number> = {
+  "Brown": 1,
+  "Light Blue": 2,
+  "Pink": 3,
+  "Orange": 4,
+  "Red": 5,
+  "Yellow": 6,
+  "Green": 7,
+  "Dark Blue": 8,
+  "Trainstations/Airfields": 9,
+  "station": 9,
+  "airport": 9,
+  "Mediacenters": 10,
+  "utility": 10,
+  "White": 11
 };
 
 /** Small visual indicator for houses / hotel on a property card. */
@@ -88,7 +105,7 @@ function PropertyCard({
           </div>
           <div className="game-stat">
             <span className="game-stat-label">{t("prop_rent")}:</span>
-            <span>{property.type === "utility" ? "Dice Multiplier" : `$${fmt(actualRent)}`}</span>
+            <span>{isUtility(property) ? "Dice Multiplier" : `$${fmt(actualRent)}`}</span>
           </div>
           {isColorProperty && (
             <>
@@ -100,7 +117,7 @@ function PropertyCard({
           )}
         </div>
 
-        {property.type === "utility" && (
+        {isUtility(property) && (
           <div className="property-hint" style={{ marginTop: 8, textAlign: "left" }}>
             If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.<br/>
             If you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.
@@ -192,7 +209,22 @@ export default function PropertiesPage() {
       if (!groups[key]) groups[key] = [];
       groups[key].push(p);
     }
-    return groups;
+    
+    // Sort keys by traditional monopoly order
+    const sortedGroups: Record<string, Property[]> = {};
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      const orderA = COLOR_ORDER[a] ?? 99;
+      const orderB = COLOR_ORDER[b] ?? 99;
+      return orderA - orderB;
+    });
+    
+    for (const key of sortedKeys) {
+      sortedGroups[key] = groups[key];
+      // Sort properties inside group by position
+      sortedGroups[key].sort((a, b) => a.position - b.position);
+    }
+    
+    return sortedGroups;
   }, [mine]);
 
   if (!user) {
@@ -292,8 +324,14 @@ export default function PropertiesPage() {
               {t("board_overview_desc")}
             </p>
             <div className="games-list">
-              {properties
+              {[...properties]
                 .filter((p) => p.type !== "special")
+                .sort((a, b) => {
+                  const orderA = COLOR_ORDER[a.group_name ?? a.type] ?? 99;
+                  const orderB = COLOR_ORDER[b.group_name ?? b.type] ?? 99;
+                  if (orderA !== orderB) return orderA - orderB;
+                  return a.position - b.position;
+                })
                 .map((property) => {
                   const isOwned = !!property.owner_id;
                   const isMineProp = property.owner_id === user.id;
@@ -324,11 +362,11 @@ export default function PropertiesPage() {
                           </div>
                           <div className="game-stat">
                             <span className="game-stat-label">{t("prop_rent")}:</span>
-                            <span>{property.type === "utility" ? "Dice Multiplier" : `$${calculateRent(property, properties).toLocaleString()}`}</span>
+                            <span>{isUtility(property) ? "Dice Multiplier" : `$${calculateRent(property, properties).toLocaleString()}`}</span>
                           </div>
                         </div>
 
-                        {property.type === "utility" && (
+                        {isUtility(property) && (
                           <div className="property-hint" style={{ marginTop: 8, fontSize: '0.8rem', textAlign: 'left' }}>
                             If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.<br/>
                             If you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.

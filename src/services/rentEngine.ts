@@ -25,11 +25,11 @@ const RENT_TABLE: Record<string, number[]> = {
   "Schlossstraße": [2000000, 6000000, 14000000, 17000000, 20000000]
 };
 
-function isTransport(p: Property) {
+export function isTransport(p: Property) {
   return p.type === "station" || p.type === "airport" || p.name.includes("Bahnhof") || p.name.includes("Flughafen");
 }
 
-function isUtility(p: Property) {
+export function isUtility(p: Property) {
   return p.type === "utility" || p.name === "Sony Center" || p.name === "Fernsehturm";
 }
 
