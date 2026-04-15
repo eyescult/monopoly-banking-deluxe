@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { useGameStore } from "../store/gameStore";
 import { usePropertyStore, getGroupColor, getPropertyIcon } from "../store/propertyStore";
+import { calculateRent } from "../services/rentEngine";
 import type { Property } from "../types/berlin";
 
 // Extend the authStore user type to include current_game_id
@@ -46,9 +47,9 @@ function ColorBand({ groupName, type }: { groupName: string | null; type: string
   );
 }
 
-/** Full property card with color band and building indicators. */
 function PropertyCard({
   property,
+  allProperties,
   playerId,
   ownsFull,
   busy,
@@ -57,6 +58,7 @@ function PropertyCard({
   onToggleMortgage,
 }: {
   property: Property;
+  allProperties: Property[];
   playerId: string;
   ownsFull: boolean;
   busy: boolean;
@@ -68,6 +70,7 @@ function PropertyCard({
   const isColorProperty = property.type === "property";
   const hasBuildings = property.houses > 0 || property.is_hotel;
   const fmt = (n: number) => n.toLocaleString();
+  const actualRent = calculateRent(property, allProperties);
 
   return (
     <div className="game-card property-card">
@@ -85,7 +88,7 @@ function PropertyCard({
           </div>
           <div className="game-stat">
             <span className="game-stat-label">{t("prop_rent")}:</span>
-            <span>${fmt(property.rent_base)}</span>
+            <span>${fmt(actualRent)}</span>
           </div>
           {isColorProperty && (
             <>
@@ -251,6 +254,7 @@ export default function PropertiesPage() {
                     <PropertyCard
                       key={property.id}
                       property={property}
+                      allProperties={properties}
                       playerId={user.id}
                       ownsFull={
                         property.type === "property"
@@ -313,7 +317,7 @@ export default function PropertiesPage() {
                           </div>
                           <div className="game-stat">
                             <span className="game-stat-label">{t("prop_rent")}:</span>
-                            <span>${property.rent_base.toLocaleString()}</span>
+                            <span>${calculateRent(property, properties).toLocaleString()}</span>
                           </div>
                         </div>
                         {/* Show buildings on board overview too */}
