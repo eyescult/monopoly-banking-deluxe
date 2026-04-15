@@ -88,7 +88,7 @@ function PropertyCard({
           </div>
           <div className="game-stat">
             <span className="game-stat-label">{t("prop_rent")}:</span>
-            <span>${fmt(actualRent)}</span>
+            <span>{property.type === "utility" ? "Dice Multiplier" : `$${fmt(actualRent)}`}</span>
           </div>
           {isColorProperty && (
             <>
@@ -99,6 +99,13 @@ function PropertyCard({
             </>
           )}
         </div>
+
+        {property.type === "utility" && (
+          <div className="property-hint" style={{ marginTop: 8, textAlign: "left" }}>
+            If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.<br/>
+            If you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.
+          </div>
+        )}
 
         {property.is_mortgaged && (
           <div className="property-status-badge mortgaged">{t("prop_mortgaged")}</div>
@@ -317,9 +324,16 @@ export default function PropertiesPage() {
                           </div>
                           <div className="game-stat">
                             <span className="game-stat-label">{t("prop_rent")}:</span>
-                            <span>${calculateRent(property, properties).toLocaleString()}</span>
+                            <span>{property.type === "utility" ? "Dice Multiplier" : `$${calculateRent(property, properties).toLocaleString()}`}</span>
                           </div>
                         </div>
+
+                        {property.type === "utility" && (
+                          <div className="property-hint" style={{ marginTop: 8, fontSize: '0.8rem', textAlign: 'left' }}>
+                            If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.<br/>
+                            If you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.
+                          </div>
+                        )}
                         {/* Show buildings on board overview too */}
                         <BuildingIndicator houses={property.houses} isHotel={property.is_hotel} />
                         <div

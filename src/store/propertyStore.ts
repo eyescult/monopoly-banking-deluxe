@@ -233,11 +233,17 @@ export const usePropertyStore = create<PropertyState>((set, get) => ({
       return fail("You must own the entire color group before building houses");
     }
 
-    // Rule 2: Even-building rule – cannot build if another property in the group
-    // already has more houses than this one (would create a gap > 1)
     const groupProps = properties.filter(
       (p) => p.group_name === property.group_name && p.type === "property"
     );
+
+    // Rule 1b: Cannot build if any property in the color group is mortgaged
+    if (groupProps.some((p) => p.is_mortgaged)) {
+      return fail("Cannot build houses while any property in the color group is mortgaged");
+    }
+
+    // Rule 2: Even-building rule – cannot build if another property in the group
+    // already has more houses than this one (would create a gap > 1)
     const minHouses = Math.min(
       ...groupProps.filter((p) => !p.is_hotel).map((p) => p.houses)
     );

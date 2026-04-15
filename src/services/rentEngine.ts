@@ -60,6 +60,15 @@ export function calculateRent(
 
   if (property.type === "property" && !isTransport(property) && !isUtility(property)) {
     if (property.houses === 0 && !property.is_hotel) {
+      if (property.group_name) {
+        const ownsFull = allProperties.filter(
+          p => p.group_name === property.group_name && p.type === "property"
+        ).every(p => p.owner_id === property.owner_id && p.owner_id !== null);
+        
+        if (ownsFull) {
+          return property.rent_base * 2;
+        }
+      }
       return property.rent_base;
     }
     const table = RENT_TABLE[property.name];
