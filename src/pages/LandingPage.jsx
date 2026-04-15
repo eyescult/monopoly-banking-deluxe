@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -12,7 +12,7 @@ const LandingPage = () => {
     const { i18n } = useTranslation();
     const navigate = useNavigate();
     const location = useLocation();
-    const { user } = useAuthStore();
+    const user = useAuthStore(state => state.user);
     const [isLangOpen, setIsLangOpen] = useState(false);
     const langRef = useRef(null);
 

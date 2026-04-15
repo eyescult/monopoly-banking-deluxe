@@ -250,7 +250,10 @@ export const useGameStore = create((set, get) => ({
                 .single();
 
             if (!error && data) {
-                set({ currentGame: data });
+                set({ currentGame: data, error: null });
+            } else if (error) {
+                console.error('Refresh game data error:', error);
+                set({ error: error.message });
             }
         } catch (err) {
             console.error('[GameStore] Failed to refresh game data:', err);

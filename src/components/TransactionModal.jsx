@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
  * Oyuncular arası, banka ve otopark işlemlerini görsel bir arayüzle sunar.
  */
 export default function TransactionModal({ game, currentPlayer, onClose, initialConfig }) {
-    const { makeTransaction } = useGameStore();
+    const makeTransaction = useGameStore(state => state.makeTransaction);
     const { t } = useTranslation();
 
     // State yönetimi

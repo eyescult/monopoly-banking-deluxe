@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
@@ -18,8 +18,10 @@ import { useTranslation } from 'react-i18next';
  */
 export default function HomePage() {
     // Stores ve hooks
-    const { user, signOut } = useAuthStore();
-    const { getRecentGames, getUserStats } = useGameStore();
+    const user = useAuthStore(state => state.user);
+    const signOut = useAuthStore(state => state.signOut);
+    const getRecentGames = useGameStore(state => state.getRecentGames);
+    const getUserStats = useGameStore(state => state.getUserStats);
     const navigate = useNavigate();
     const { t, i18n } = useTranslation();
 
@@ -154,7 +156,7 @@ export default function HomePage() {
     };
 
     return (
-        <div className="home-page">
+        <div className="home-page premium-bg">
             {/* Sidebar ve Overlay */}
             {showSidebar && (
                 <div className="sidebar-overlay" onClick={() => setShowSidebar(false)}></div>
@@ -260,7 +262,7 @@ export default function HomePage() {
 
                     {/* İstatistik Kartları */}
                     <div className="stats-grid">
-                        <div className="stat-card">
+                        <div className="stat-card premium-glass-card" style={{ border: 'none' }}>
                             <div className="stat-icon">
                                 <Gamepad2 size={24} />
                             </div>
@@ -270,7 +272,7 @@ export default function HomePage() {
                             </div>
                         </div>
 
-                        <div className="stat-card">
+                        <div className="stat-card premium-glass-card" style={{ border: 'none' }}>
                             <div className="stat-icon stat-icon-success">
                                 <Trophy size={24} />
                             </div>
@@ -280,7 +282,7 @@ export default function HomePage() {
                             </div>
                         </div>
 
-                        <div className="stat-card">
+                        <div className="stat-card premium-glass-card" style={{ border: 'none' }}>
                             <div className="stat-icon stat-icon-warning">
                                 <Clock size={24} />
                             </div>
@@ -292,24 +294,30 @@ export default function HomePage() {
                     </div>
 
                     {/* Oyun İşlemleri Butonları */}
-                    <div className="game-actions">
+                    <div className="game-actions" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
                         <button
-                            className="btn btn-primary btn-large game-action-btn"
+                            className="premium-action-btn success-btn"
+                            style={{ padding: '24px', flexDirection: 'row', justifyContent: 'flex-start' }}
                             onClick={() => setShowCreateModal(true)}
                         >
-                            <Plus size={24} />
-                            <div className="action-content">
+                            <div className="premium-action-icon" style={{ marginBottom: 0, marginRight: '16px', flexShrink: 0 }}>
+                                <Plus size={24} />
+                            </div>
+                            <div className="action-content" style={{ textAlign: 'left' }}>
                                 <div className="action-title">{t('create_game')}</div>
                                 <div className="action-subtitle">{t('create_game_subtitle')}</div>
                             </div>
                         </button>
 
                         <button
-                            className="btn btn-secondary btn-large game-action-btn"
+                            className="premium-action-btn info-btn"
+                            style={{ padding: '24px', flexDirection: 'row', justifyContent: 'flex-start' }}
                             onClick={() => setShowJoinModal(true)}
                         >
-                            <LoginIcon size={24} />
-                            <div className="action-content">
+                            <div className="premium-action-icon" style={{ marginBottom: 0, marginRight: '16px', flexShrink: 0 }}>
+                                <LoginIcon size={24} />
+                            </div>
+                            <div className="action-content" style={{ textAlign: 'left' }}>
                                 <div className="action-title">{t('join_game')}</div>
                                 <div className="action-subtitle">{t('join_game_subtitle')}</div>
                             </div>
@@ -327,7 +335,7 @@ export default function HomePage() {
                                     const duration = formatDuration(game.starting_timestamp, game.ending_timestamp);
 
                                     return (
-                                        <div key={game.id} className="game-card">
+                                        <div key={game.id} className="game-card premium-glass-card" style={{ border: 'none' }}>
                                             <div className="game-card-header">
                                                 <span className="game-id">#{game.id}</span>
                                                 <Trophy size={16} color="var(--warning)" />

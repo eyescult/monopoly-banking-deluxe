@@ -1483,9 +1483,138 @@ input[type="checkbox"] {
 
 .game-page {
   min-height: 100vh;
-  background: var(--background);
   display: flex;
   flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Premium Animated Background */
+.premium-bg {
+  background: linear-gradient(135deg, var(--background) 0%, rgba(20, 20, 30, 0.95) 100%);
+}
+
+.premium-bg::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 50%, rgba(246, 57, 25, 0.15), transparent 40%),
+              radial-gradient(circle at 80% 20%, rgba(76, 194, 255, 0.1), transparent 30%);
+  animation: premiumGradientMove 15s ease-in-out infinite alternate;
+  z-index: 0;
+}
+
+@keyframes premiumGradientMove {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-3%, 2%) scale(1.05); }
+  100% { transform: translate(2%, -3%) scale(0.95); }
+}
+
+/* Horizontal Scroll Utilities */
+.horizontal-scroll::-webkit-scrollbar {
+  display: none;
+}
+.horizontal-scroll {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Premium Layout Elements */
+.premium-glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-xl);
+  position: relative;
+  z-index: 1;
+}
+
+/* Dark mode overrides for glass */
+@media (prefers-color-scheme: dark) {
+  .premium-glass-card {
+    background: rgba(20, 20, 30, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  }
+}
+
+.premium-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  color: var(--text-primary);
+  font-weight: 600;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+}
+
+@media (prefers-color-scheme: dark) {
+  .premium-action-btn {
+    background: rgba(30, 35, 50, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
+
+.premium-action-btn:hover {
+  transform: translateY(-4px) scale(1.02);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .premium-action-btn:hover {
+    background: rgba(40, 48, 70, 0.6);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.premium-action-btn:active {
+  transform: scale(0.96);
+}
+
+.premium-action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  margin-bottom: var(--spacing-xs);
+  box-shadow: 0 4px 10px rgba(246, 57, 25, 0.3);
+}
+
+.premium-action-btn.secondary-btn .premium-action-icon {
+  background: linear-gradient(135deg, var(--info), #7cd2ff);
+  box-shadow: 0 4px 10px rgba(76, 194, 255, 0.3);
+}
+
+.premium-action-btn.success-btn .premium-action-icon {
+  background: linear-gradient(135deg, var(--success), #8be01d);
+  box-shadow: 0 4px 10px rgba(107, 183, 0, 0.3);
+}
+
+.premium-action-btn.warning-btn .premium-action-icon {
+  background: linear-gradient(135deg, var(--warning), #ffaf4d);
+  box-shadow: 0 4px 10px rgba(255, 140, 0, 0.3);
+}
+
+.premium-action-btn.info-btn .premium-action-icon {
+  background: linear-gradient(135deg, var(--info), #7cd2ff);
+  box-shadow: 0 4px 10px rgba(76, 194, 255, 0.3);
 }
 
 .game-header {
@@ -1529,17 +1658,18 @@ input[type="checkbox"] {
 }
 
 .balance-section {
-  background: var(--surface);
-  padding: var(--spacing-2xl) var(--spacing-md);
+  padding: var(--spacing-xl) var(--spacing-md);
   text-align: center;
-  border-bottom: 1px solid var(--border);
+  margin: var(--spacing-md);
 }
 
 .main-balance {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 3rem;
+  font-weight: 800;
   color: var(--text-primary);
   margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  letter-spacing: -1px;
 }
 
 .scrollable-content {
@@ -1569,20 +1699,36 @@ input[type="checkbox"] {
 }
 
 .action-item {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
   padding: var(--spacing-md);
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@media (prefers-color-scheme: dark) {
+  .action-item {
+    background: rgba(30, 35, 50, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
 }
 
 .action-item:hover {
-  background: var(--surface-hover);
-  border-color: var(--border-hover);
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .action-item:hover {
+    background: rgba(40, 48, 70, 0.6);
+  }
 }
 
 .player-info {

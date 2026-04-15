@@ -164,6 +164,9 @@
     "name_min_length": "Name muss mindestens 2 Zeichen lang sein",
     "name_max_length": "Name darf höchstens 30 Zeichen lang sein",
     "name_set_error": "Name konnte nicht gesetzt werden",
+    "change_avatar": "Avatar ändern",
+    "trade_offers_label": "bietet:",
+    "invalid_image_type": "Bitte wähle eine Bilddatei aus",
     "enter_game_code": "Bitte Spielcode eingeben",
     "join_error": "Spiel konnte nicht beigetreten werden",
     "game_created": "Spiel erstellt!",
@@ -228,6 +231,8 @@
     "board_overview": "Spielfeldübersicht",
     "board_overview_desc": "Alle kaufbaren Grundstücke. Klicke auf 'Kaufen' bei freien Feldern.",
     "no_properties_owned": "Du besitzt noch keine Grundstücke.",
+    "prop_owned_suffix": "besessen",
+    "prop_rent_label": "Miete:",
     "loading_properties": "Lade Grundstücke…",
     "prop_price": "Preis",
     "prop_rent": "Miete",
@@ -245,5 +250,11 @@
     "prop_owner_free": "Frei",
     "prop_buy_for": "Kaufen für ${{price}}",
     "prop_rent_dice_multiplier": "Würfel-Multiplikator",
-    "prop_rent_mediacenter_desc": "Wenn du ein Medienzentrum besitzt, beträgt die Miete das Vierfache der gewürfelten Augenzahl multipliziert mit 10.000.\nWenn du beide Medienzentren besitzt, beträgt die Miete das Zehnfache der gewürfelten Augenzahl multipliziert mit 10.000."
+    "prop_rent_mediacenter_desc": "Wenn du ein Medienzentrum besitzt, beträgt die Miete das Vierfache der gewürfelten Augenzahl multipliziert mit 10.000.\nWenn du beide Medienzentren besitzt, beträgt die Miete das Zehnfache der gewürfelten Augenzahl multipliziert mit 10.000.",
+    "trade_none": "Keiner",
+    "trade_my_offer": "Mein Angebot",
+    "trade_their_offer": "Gegenangebot",
+    "trade_create": "Handel erstellen",
+    "trade_cancel": "Abbrechen",
+    "trade_building_warn": "Die {{group}}-Gruppe hat Gebäude — diese werden automatisch zum halben Preis verkauft."
 }

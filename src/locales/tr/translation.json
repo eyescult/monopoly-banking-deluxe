@@ -164,6 +164,9 @@
     "name_min_length": "Ad en az 2 karakter olmalıdır",
     "name_max_length": "Ad en fazla 30 karakter olabilir",
     "name_set_error": "Ad ayarlanamadı",
+    "change_avatar": "Avatarı Değiştir",
+    "trade_offers_label": "şunu teklif ediyor:",
+    "invalid_image_type": "Lütfen bir resim dosyası seçin",
     "enter_game_code": "Lütfen oyun kodunu girin",
     "join_error": "Oyuna katılınamadı",
     "game_created": "Oyun oluşturuldu!",
@@ -228,6 +231,8 @@
     "board_overview": "Oyun Tahtası Özeti",
     "board_overview_desc": "Satın alınabilir tüm mülkler. Boş olanlarda 'Satın Al'a tıklayın.",
     "no_properties_owned": "Henüz hiçbir mülkünüz yok.",
+    "prop_owned_suffix": "sahip olunan",
+    "prop_rent_label": "Kira:",
     "loading_properties": "Mülkler yükleniyor...",
     "prop_price": "Fiyat",
     "prop_rent": "Kira",
@@ -245,5 +250,11 @@
     "prop_owner_free": "Müsait",
     "prop_buy_for": "${{price}} karşılığında al",
     "prop_rent_dice_multiplier": "Zar Çarpanı",
-    "prop_rent_mediacenter_desc": "Bir medya merkezine sahipseniz, kira atılan zarın dört katının 10.000 ile çarpımıdır.\nİki medya merkezine de sahipseniz, kira atılan zarın on katının 10.000 ile çarpımıdır."
+    "prop_rent_mediacenter_desc": "Bir medya merkezine sahipseniz, kira atılan zarın dört katının 10.000 ile çarpımıdır.\nİki medya merkezine de sahipseniz, kira atılan zarın on katının 10.000 ile çarpımıdır.",
+    "trade_none": "Yok",
+    "trade_my_offer": "Teklifim",
+    "trade_their_offer": "Karşı Teklif",
+    "trade_create": "Takas Oluştur",
+    "trade_cancel": "İptal Et",
+    "trade_building_warn": "{{group}} grubunda binalar var — bunlar otomatik olarak yarı fiyatına satılacaktır."
 }

@@ -164,6 +164,9 @@
     "name_min_length": "Name must be at least 2 characters",
     "name_max_length": "Name can be at most 30 characters",
     "name_set_error": "Could not set name",
+    "change_avatar": "Change Avatar",
+    "trade_offers_label": "offers:",
+    "invalid_image_type": "Please select an image file",
     "enter_game_code": "Please enter game code",
     "join_error": "Could not join game",
     "game_created": "Game created!",
@@ -228,6 +231,8 @@
     "board_overview": "Board Overview",
     "board_overview_desc": "All purchasable properties. Click 'Buy' on unowned ones.",
     "no_properties_owned": "You don't own any properties yet.",
+    "prop_owned_suffix": "owned",
+    "prop_rent_label": "Rent:",
     "loading_properties": "Loading properties…",
     "prop_price": "Price",
     "prop_rent": "Rent",
@@ -245,5 +250,11 @@
     "prop_owner_free": "Available",
     "prop_buy_for": "Buy ${{price}}",
     "prop_rent_dice_multiplier": "Dice Multiplier",
-    "prop_rent_mediacenter_desc": "If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.\nIf you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000."
+    "prop_rent_mediacenter_desc": "If you own one media center, the rent is four times the number rolled on two dice multiplied by 10,000.\nIf you own both media centers, the rent is ten times the number rolled on two dice multiplied by 10,000.",
+    "trade_none": "None",
+    "trade_my_offer": "My Offer",
+    "trade_their_offer": "Their Offer",
+    "trade_create": "Create Trade",
+    "trade_cancel": "Cancel Trade",
+    "trade_building_warn": "{{group}} group has buildings — they will be sold at half price automatically."
 }

@@ -318,5 +318,30 @@ export const useAuthStore = create((set, get) => ({
             console.error('Set current game error:', error);
             return { success: false, error: error.message };
         }
+    },
+    
+    /**
+     * Kullanıcının avatarını günceller.
+     */
+    updateAvatar: async (photoUrl) => {
+        try {
+            const user = get().user;
+            if (!user) throw new Error('Kullanıcı bulunamadı');
+
+            const { data: updatedUser, error } = await supabase
+                .from('users')
+                .update({ photo_url: photoUrl })
+                .eq('id', user.id)
+                .select()
+                .maybeSingle();
+
+            if (error) throw error;
+
+            set({ user: updatedUser });
+            return { success: true };
+        } catch (error) {
+            console.error('Update avatar error:', error);
+            return { success: false, error: error.message };
+        }
     }
 }));

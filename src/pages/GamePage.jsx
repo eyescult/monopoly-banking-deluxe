@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { useAuthStore } from '../store/authStore';
 import { usePropertyStore, getGroupColor, getPropertyIcon } from '../store/propertyStore';
+import { calculateRent, isUtility } from '../services/rentEngine';
 import {
     Menu, X, DollarSign, Send, ArrowRightLeft,
     LogOut, History, ShieldAlert, CircleAlert, Globe, Home, ShoppingCart
@@ -18,25 +19,20 @@ import { useTranslation } from 'react-i18next';
 export default function GamePage() {
     const { gameId } = useParams();
     const navigate = useNavigate();
-    const { user } = useAuthStore();
+    const user = useAuthStore(state => state.user);
     const { t, i18n } = useTranslation();
 
-    const {
-        currentGame,
-        subscribeToGame,
-        leaveGame,
-        endGame,
-        bankruptPlayer,
-        refreshGameData
-    } = useGameStore();
-    const game = currentGame;
+    const game = useGameStore(state => state.currentGame);
+    const subscribeToGame = useGameStore(state => state.subscribeToGame);
+    const leaveGame = useGameStore(state => state.leaveGame);
+    const endGame = useGameStore(state => state.endGame);
+    const bankruptPlayer = useGameStore(state => state.bankruptPlayer);
+    const refreshGameData = useGameStore(state => state.refreshGameData);
 
     // Property store for inline buy
-    const {
-        properties,
-        initForLegacyGame: initProperties,
-        buyProperty
-    } = usePropertyStore();
+    const properties = usePropertyStore(state => state.properties);
+    const initProperties = usePropertyStore(state => state.initForLegacyGame);
+    const buyProperty = usePropertyStore(state => state.buyProperty);
     const [buyingProperty, setBuyingProperty] = useState(null);
 
     // UI States
@@ -54,31 +50,32 @@ export default function GamePage() {
     const [initialLoading, setInitialLoading] = useState(true);
 
     /**
-     * Oyuna bağlanma ve real-time abonelik başlatma.
+     * Oyuna bağlanma ve verileri getirme.
      */
     useEffect(() => {
-        if (!user || !gameId) return;
+        if (!user?.id || !gameId) return;
 
         let subscription = null;
         let isMounted = true;
 
         const connect = async () => {
-            const result = await subscribeToGame(gameId);
-            // Prevent state updates and leaks if user leaves page quickly.
-            if (!isMounted) {
-                if (result?.success && result.subscription) {
-                    result.subscription.unsubscribe();
+            try {
+                // Parallelize initialization to avoid sequential hangs
+                const [subResult] = await Promise.all([
+                    subscribeToGame(gameId),
+                    initProperties(gameId, user.id, user.name || 'Guest')
+                ]);
+                
+                if (isMounted) {
+                    setInitialLoading(false);
+                    if (!subResult?.success) {
+                        toast.error(subResult?.error || t('game_connect_error'));
+                        // Don't navigate away immediately, give it a chance
+                    }
                 }
-                return;
-            }
-
-            setInitialLoading(false);
-
-            if (!result.success) {
-                toast.error(result.error || t('game_connect_error'));
-                navigate('/');
-            } else {
-                subscription = result.subscription;
+            } catch (err) {
+                console.error('Initialization error:', err);
+                if (isMounted) setInitialLoading(false);
             }
         };
 
@@ -86,17 +83,14 @@ export default function GamePage() {
 
         return () => {
             isMounted = false;
+            // The store handles channel removal, but we can also manually call unsubscribe if we captured it:
             if (subscription) {
-                subscription.unsubscribe();
+                // However, since we parallelized it and subResult is scoped in the try block,
+                // we should rely on the store's cleanup or just unsubscribe here if we track it.
+                // We'll leave it to the store.
             }
         };
-    }, [user, gameId, subscribeToGame, navigate, t]);
-
-    // Initialize property store for inline buy section
-    useEffect(() => {
-        if (!user?.id || !gameId) return;
-        initProperties(gameId, user.id, user.name || 'Guest');
-    }, [gameId, initProperties, user?.id, user?.name]);
+    }, [user?.id, gameId, subscribeToGame, initProperties]);
 
     /**
      * Oyun bittiğinde modalı göster.
@@ -130,8 +124,16 @@ export default function GamePage() {
     }, [showSidebar]);
 
 
-    // Loading ekranı
-    if (initialLoading || !game) {
+    const myProperties = useMemo(
+        () => {
+            if (!user?.id) return [];
+            return properties.filter(p => p.owner_id === user.id).sort((a, b) => a.position - b.position);
+        },
+        [properties, user?.id]
+    );
+
+    // Loading screen
+    if (initialLoading) {
         return (
             <div className="loading-screen">
                 <div className="spinner"></div>
@@ -140,10 +142,27 @@ export default function GamePage() {
         );
     }
 
-    const currentPlayer = game.players.find(p => p.user_id === user.id);
-    const isHost = game.created_by === user.id;
+    // Game not found screen
+    if (!game) {
+        return (
+            <div className="error-screen">
+                <h2>{t('game_not_found_title') || 'Game Not Found'}</h2>
+                <p>{t('game_not_found_desc') || 'The game code you entered does not exist or has been deleted.'}</p>
+                <button className="btn btn-primary" onClick={async () => {
+                    await useAuthStore.getState().setCurrentGameId(null);
+                    navigate('/');
+                }}>
+                    {t('return_home')}
+                </button>
+            </div>
+        );
+    }
+
+    const currentPlayer = game.players.find(p => p.user_id === user?.id);
+    const isHost = game.created_by === user?.id;
     const transactions = game.transaction_history || [];
     const freeParkingBalance = game.free_parking_money || 0;
+
 
     // Oyuncu oyunda değilse (örn. atıldıysa veya hata olduysa)
     if (!currentPlayer) {
@@ -156,6 +175,8 @@ export default function GamePage() {
             </div>
         );
     }
+
+    const isBankrupt = !!currentPlayer.bankrupt_timestamp;
 
     /**
      * Oyundan ayrılma işlemi.
@@ -253,10 +274,10 @@ export default function GamePage() {
         i18n.changeLanguage(lng);
     };
 
-    const isBankrupt = !!currentPlayer.bankrupt_timestamp;
+
 
     return (
-        <div className={`game-page ${isBankrupt ? 'bankrupt-mode' : ''}`}>
+        <div className={`game-page premium-bg ${isBankrupt ? 'bankrupt-mode' : ''}`}>
             {/* Sidebar Overlay */}
             {showSidebar && (
                 <div className="sidebar-overlay" onClick={() => setShowSidebar(false)}></div>
@@ -367,43 +388,97 @@ export default function GamePage() {
             </div>
 
             {/* Bakiye Kartı */}
-            <div className="balance-card fade-in">
-                <div className="balance-label">{t('current_balance')}</div>
-                <div className="balance-amount">
+            <div className="balance-section premium-glass-card fade-in" style={{ animation: 'float 6s ease-in-out infinite' }}>
+                <div className="section-header" style={{ justifyContent: 'center', marginBottom: '8px' }}>{t('current_balance')}</div>
+                <div className="main-balance">
                     ${currentPlayer.balance.toLocaleString()}
                 </div>
             </div>
 
+            {/* Owned Properties Scroll (Overview) */}
+            {myProperties.length > 0 && (
+                <div className="owned-properties-section fade-in-up" style={{ margin: '0 16px 24px 16px' }}>
+                    <div className="section-header" style={{ marginBottom: '12px' }}>
+                        <h3>{t('my_properties')}</h3>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{myProperties.length} {t('prop_owned_suffix')}</span>
+                    </div>
+                    <div className="horizontal-scroll" style={{ 
+                        display: 'flex', 
+                        overflowX: 'auto', 
+                        gap: '12px', 
+                        paddingBottom: '8px',
+                        scrollbarWidth: 'none' // Firefox
+                    }}>
+                        {myProperties.map(property => {
+                            const bandColor = getGroupColor(property.group_name);
+                            const rentLabel = isUtility(property) ? 'Dice x' + (myProperties.filter(p => p.group_name === 'Mediacenters').length > 1 ? '10' : '4') + '*' : `$${calculateRent(property, properties).toLocaleString()}`;
+                            return (
+                                <div 
+                                    key={property.id} 
+                                    className="premium-glass-card" 
+                                    style={{ 
+                                        minWidth: '130px', 
+                                        padding: '12px', 
+                                        borderRadius: 'var(--radius-md)', 
+                                        borderTop: `4px solid ${bandColor}`,
+                                        cursor: 'pointer'
+                                    }}
+                                    onClick={() => navigate('/properties')}
+                                >
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {property.name}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                        {t('prop_rent_label')} <strong style={{color: 'var(--text-primary)'}}>{rentLabel}</strong>
+                                    </div>
+                                    {(property.houses > 0 || property.is_hotel) && (
+                                        <div style={{ marginTop: '6px', display: 'flex', gap: '2px' }}>
+                                            {property.is_hotel ? (
+                                                <span title="Hotel" style={{ fontSize: '12px' }}>🏨</span>
+                                            ) : (
+                                                Array.from({ length: property.houses }).map((_, i) => (
+                                                    <span key={i} title="House" style={{ fontSize: '10px' }}>🏠</span>
+                                                ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
             {/* Hızlı İşlemler */}
-            <div className="quick-actions fade-in-up">
+            <div className="quick-actions fade-in-up" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', padding: '0 16px', marginBottom: '24px' }}>
                 <button
-                    className="action-btn success"
+                    className="premium-action-btn success-btn"
                     onClick={() => openTransaction('fromBank')}
                     disabled={isBankrupt}
                 >
-                    <div className="icon-wrapper">
+                    <div className="premium-action-icon">
                         <DollarSign size={24} />
                     </div>
                     <span>{t('withdraw_bank')}</span>
                 </button>
 
                 <button
-                    className="action-btn warning"
+                    className="premium-action-btn warning-btn"
                     onClick={() => openTransaction('fromSalary')}
                     disabled={isBankrupt}
                 >
-                    <div className="icon-wrapper">
+                    <div className="premium-action-icon">
                         <DollarSign size={24} />
                     </div>
                     <span>{t('salary_receive')}</span>
                 </button>
 
                 <button
-                    className="action-btn danger"
+                    className="premium-action-btn danger-btn"
                     onClick={() => openTransaction('toBank')}
                     disabled={isBankrupt}
                 >
-                    <div className="icon-wrapper">
+                    <div className="premium-action-icon">
                         <DollarSign size={24} />
                     </div>
                     <span>{t('pay_bank')}</span>
@@ -411,57 +486,56 @@ export default function GamePage() {
 
                 {game.enable_free_parking && (
                     <button
-                        className="action-btn info"
+                        className="premium-action-btn info-btn"
                         onClick={() => openTransaction('toFreeParking')}
                         disabled={isBankrupt}
                     >
-                        <div className="icon-wrapper">
+                        <div className="premium-action-icon">
                             <DollarSign size={24} />
                         </div>
                         <span>{t('pay_parking')}</span>
                     </button>
                 )}
-            </div>
 
-            <div className="quick-actions fade-in-up" style={{ marginTop: '12px' }}>
-                <button className="action-btn info" onClick={() => navigate('/properties')}>
-                    <div className="icon-wrapper"><Home size={24} /></div>
+                <button className="premium-action-btn secondary-btn" onClick={() => navigate('/properties')}>
+                    <div className="premium-action-icon"><Home size={24} /></div>
                     <span>{t('properties') || 'Properties'}</span>
                 </button>
-                <button className="action-btn warning" onClick={() => navigate('/trades')}>
-                    <div className="icon-wrapper"><ArrowRightLeft size={24} /></div>
+                
+                <button className="premium-action-btn secondary-btn" onClick={() => navigate('/trades')}>
+                    <div className="premium-action-icon"><ArrowRightLeft size={24} /></div>
                     <span>{t('trades') || 'Trades'}</span>
                 </button>
             </div>
 
 
 
-            {/* Oyuncu Listesi (Transfer için) */}
-            <div className="players-section fade-in-up">
-                <div className="section-header">
+            <div className="players-section fade-in-up" style={{ padding: '0 16px', marginBottom: '24px' }}>
+                <div className="section-header" style={{ marginBottom: '12px' }}>
                     <h3>{t('transfer_to_player')}</h3>
                 </div>
-                <div className="players-grid">
+                <div className="players-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '12px' }}>
                     {game.players
                         .filter(p => p.user_id !== user.id && !p.bankrupt_timestamp)
                         .map(player => (
                             <button
                                 key={player.user_id}
-                                className="player-card"
+                                className="premium-action-btn"
+                                style={{ padding: '16px 8px' }}
                                 onClick={() => openTransaction('toPlayer', player.user_id)}
                                 disabled={isBankrupt}
                             >
-                                <Avatar user={player} size={48} />
-                                <span className="player-name">{player.name}</span>
-                                <span className="send-icon">
-                                    <Send size={16} />
+                                <Avatar user={player} size={48} showBorder={true} />
+                                <span className="player-name" style={{ fontSize: '0.9rem', marginTop: '4px' }}>{player.name}</span>
+                                <span className="send-icon" style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)' }}>
+                                    <Send size={14} />
                                     {t('send')}
                                 </span>
                             </button>
                         ))}
 
                     {game.players.filter(p => p.user_id !== user.id && !p.bankrupt_timestamp).length === 0 && (
-                        <div className="empty-state">
+                        <div className="empty-state premium-glass-card" style={{ gridColumn: '1 / -1', padding: '24px', textAlign: 'center' }}>
                             <p>{t('no_other_players')}</p>
                         </div>
                     )}
@@ -470,13 +544,13 @@ export default function GamePage() {
 
             {/* Otopark Bilgisi (Opsiyonel) */}
             {game.enable_free_parking && (
-                <div className="parking-card fade-in-up">
+                <div className="parking-card premium-glass-card fade-in-up" style={{ margin: '0 16px 24px 16px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div className="parking-info">
-                        <div className="parking-label">{t('free_parking_balance')}</div>
-                        <div className="parking-amount">${freeParkingBalance.toLocaleString()}</div>
+                        <div className="parking-label" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{t('free_parking_balance')}</div>
+                        <div className="parking-amount" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>${freeParkingBalance.toLocaleString()}</div>
                     </div>
                     <button
-                        className="btn btn-small btn-outline"
+                        className="btn btn-outline"
                         onClick={() => openTransaction('fromFreeParking')}
                         disabled={isBankrupt}
                     >

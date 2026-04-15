@@ -90,7 +90,7 @@ function PropertyCard({
   const actualRent = calculateRent(property, allProperties);
 
   return (
-    <div className="game-card property-card">
+    <div className="game-card property-card premium-glass-card" style={{ border: 'none', marginBottom: '16px' }}>
       <ColorBand groupName={property.group_name} type={property.type} />
       <div className="game-card-header">
         <strong>{property.name}</strong>
@@ -174,18 +174,16 @@ function PropertyCard({
 export default function PropertiesPage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user } = useAuthStore() as { user: AuthUser | null };
-  const { currentGame } = useGameStore();
-  const {
-    properties,
-    loading,
-    initForLegacyGame,
-    buyProperty,
-    buyHouse,
-    sellHouse,
-    toggleMortgage,
-    ownsFullColorGroup,
-  } = usePropertyStore();
+  const user = useAuthStore(state => state.user) as AuthUser | null;
+  const currentGame = useGameStore(state => state.currentGame);
+  const properties = usePropertyStore(state => state.properties);
+  const loading = usePropertyStore(state => state.loading);
+  const initForLegacyGame = usePropertyStore(state => state.initForLegacyGame);
+  const buyProperty = usePropertyStore(state => state.buyProperty);
+  const buyHouse = usePropertyStore(state => state.buyHouse);
+  const sellHouse = usePropertyStore(state => state.sellHouse);
+  const toggleMortgage = usePropertyStore(state => state.toggleMortgage);
+  const ownsFullColorGroup = usePropertyStore(state => state.ownsFullColorGroup);
   const [busyProperty, setBusyProperty] = useState<string | null>(null);
 
   // Use currentGame.id if available, fall back to the game code stored in
@@ -275,7 +273,7 @@ export default function PropertiesPage() {
   };
 
   return (
-    <div className="home-page">
+    <div className="home-page premium-bg" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', overflowY: 'auto' }}>
       <div className="container">
         <div className="home-content fade-in">
           {/* Header */}
@@ -370,7 +368,7 @@ export default function PropertiesPage() {
                         const bandColor = getGroupColor(property.group_name);
 
                         return (
-                          <div key={property.id} className="game-card property-card" style={{ marginBottom: 16 }}>
+                          <div key={property.id} className="game-card property-card premium-glass-card" style={{ marginBottom: 16, border: 'none' }}>
                             <ColorBand groupName={property.group_name} type={property.type} />
                             <div className="game-card-header">
                               <span>

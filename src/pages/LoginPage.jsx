@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { LogIn, Mail, Lock, User as UserIcon, Globe } from 'lucide-react';
@@ -23,7 +23,9 @@ export default function LoginPage() {
     const [lastName, setLastName] = useState('');
 
     // Stores ve hooks
-    const { signInAnonymously, signInWithEmail, signUpWithEmail } = useAuthStore();
+    const signInAnonymously = useAuthStore(state => state.signInAnonymously);
+    const signInWithEmail = useAuthStore(state => state.signInWithEmail);
+    const signUpWithEmail = useAuthStore(state => state.signUpWithEmail);
     const navigate = useNavigate();
     const location = useLocation();
     const { t, i18n } = useTranslation();
@@ -108,7 +110,7 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="login-page">
+        <div className="login-page premium-bg">
             <div className="language-switcher" style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 10 }}>
                 <button
                     className={`btn btn-small ${i18n.language === 'de' ? 'btn-primary' : 'btn-ghost'}`}
@@ -132,7 +134,7 @@ export default function LoginPage() {
                 </button>
             </div>
 
-            <div className="login-container fade-in">
+            <div className="login-container fade-in premium-glass-card" style={{ padding: '2rem', border: 'none' }}>
                 <div className="login-logo">
                     <img src={logo} alt="Monopoly --Banking Deluxe-" className="app-logo light-mode-logo" />
                     <img src={logoDark} alt="Monopoly --Banking Deluxe-" className="app-logo dark-mode-logo" />

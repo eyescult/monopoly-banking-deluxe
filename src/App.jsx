@@ -18,7 +18,8 @@ import { useLocation } from 'react-router-dom';
  * Kullanıcı giriş yapmamışsa giriş sayfasına yönlendirir.
  */
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuthStore();
+  const user = useAuthStore(state => state.user);
+  const loading = useAuthStore(state => state.loading);
   const location = useLocation();
 
   if (loading) {
@@ -46,7 +47,8 @@ function ProtectedRoute({ children }) {
  * Sadece giriş yapmış kullanıcıların erişmesini sağlar.
  */
 function UsernameRoute({ children }) {
-  const { user, loading } = useAuthStore();
+  const user = useAuthStore(state => state.user);
+  const loading = useAuthStore(state => state.loading);
 
   if (loading) {
     return (
@@ -67,7 +69,8 @@ function UsernameRoute({ children }) {
  * Giriş sayfası gibi sadece giriş yapmamış kullanıcıların göreceği rotalar için koruyucu bileşen.
  */
 function PublicRoute({ children }) {
-  const { user, loading } = useAuthStore();
+  const user = useAuthStore(state => state.user);
+  const loading = useAuthStore(state => state.loading);
 
   if (loading) {
     return (
@@ -88,12 +91,8 @@ function PublicRoute({ children }) {
   return children;
 }
 
-/**
- * Uygulamanın ana bileşeni.
- * Router yapılandırmasını, bildirim sistemini (Toaster) ve oturum başlatmayı yönetir.
- */
 function App() {
-  const { initialize } = useAuthStore();
+  const initialize = useAuthStore(state => state.initialize);
 
   // Uygulama başladığında oturumu kontrol et ve dinleyiciyi başlat
   useEffect(() => {

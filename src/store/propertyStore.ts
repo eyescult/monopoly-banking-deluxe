@@ -96,6 +96,9 @@ export const usePropertyStore = create<PropertyState>((set, get) => ({
   bankruptPlayers: {},
 
   initForLegacyGame: async (legacyCode, userId, username) => {
+    // Prevent multiple initializations if already loading or initialized for this game
+    if (get().v2GameId && get().loading) return ok(get().v2GameId!);
+    
     set({ loading: true, error: null });
     const profile = await ensureV2Profile(userId, username);
     if (!profile.success) {

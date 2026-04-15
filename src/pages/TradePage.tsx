@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { useGameStore } from "../store/gameStore";
 import { usePropertyStore, getGroupColor } from "../store/propertyStore";
@@ -69,11 +70,11 @@ function PropertyPill({
 
 /** Warning label shown when a traded property group won't be traded completely */
 function BuildingWarn({ show, groupName }: { show: boolean; groupName: string | null }) {
+  const { t } = useTranslation();
   if (!show) return null;
   return (
     <div className="trade-building-warn">
-      ⚠️ <strong>{groupName}</strong> group has buildings — they will be sold at half price
-      automatically (Monopoly rules require selling buildings before trading a partial color group).
+      ⚠️ {t('trade_building_warn', { group: groupName })}
     </div>
   );
 }
@@ -86,7 +87,8 @@ function TradePropertyList({
   ids: string[];
   properties: Property[];
 }) {
-  if (ids.length === 0) return <span style={{ color: "var(--text-secondary)" }}>None</span>;
+  const { t } = useTranslation();
+  if (ids.length === 0) return <span style={{ color: "var(--text-secondary)" }}>{t('trade_none')}</span>;
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
       {ids.map((id) => {
@@ -112,10 +114,17 @@ function playerName(playerId: string, players: LegacyPlayer[]): string {
 
 export default function TradePage() {
   const navigate = useNavigate();
-  const { user } = useAuthStore() as { user: any | null };
-  const { currentGame } = useGameStore();
-  const { v2GameId, properties, initForLegacyGame } = usePropertyStore();
-  const { trades, initialize, createTrade, rejectTrade, acceptTrade } = useTradeStore();
+  const { t } = useTranslation();
+  const user = useAuthStore(state => state.user) as any | null;
+  const currentGame = useGameStore(state => state.currentGame);
+  const v2GameId = usePropertyStore(state => state.v2GameId);
+  const properties = usePropertyStore(state => state.properties);
+  const initForLegacyGame = usePropertyStore(state => state.initForLegacyGame);
+  const trades = useTradeStore(state => state.trades);
+  const initialize = useTradeStore(state => state.initialize);
+  const createTrade = useTradeStore(state => state.createTrade);
+  const rejectTrade = useTradeStore(state => state.rejectTrade);
+  const acceptTrade = useTradeStore(state => state.acceptTrade);
 
   const [toPlayer, setToPlayer] = useState("");
   const [offeredMoney, setOfferedMoney] = useState(0);
@@ -215,7 +224,7 @@ export default function TradePage() {
     setBusy(false);
     if (!result.success) toast.error(result.error);
     else {
-      toast.success("Trade offer sent!");
+      toast.success(t('trade_sending') || "Trade offer sent!");
       setOfferedProperties([]);
       setRequestedProperties([]);
       setOfferedMoney(0);
@@ -229,7 +238,7 @@ export default function TradePage() {
     const result = await acceptTrade(trade.id, user.id);
     setBusy(false);
     if (!result.success) toast.error(result.error);
-    else toast.success("Trade accepted!");
+    else toast.success(t('trade_received') || "Trade accepted!");
   };
 
   const handleReject = async (trade: Trade) => {
@@ -237,11 +246,11 @@ export default function TradePage() {
     const result = await rejectTrade(trade.id, user.id);
     setBusy(false);
     if (!result.success) toast.error(result.error);
-    else toast.success("Trade rejected");
+    else toast.success(t('trade_cancel') || "Trade rejected");
   };
 
   return (
-    <div className="home-page">
+    <div className="home-page premium-bg">
       <div className="container">
         <div className="home-content fade-in">
           {/* Header */}
@@ -249,16 +258,16 @@ export default function TradePage() {
             className="section-header"
             style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
           >
-            <h2>Trades</h2>
+            <h2>{t('trades')}</h2>
             <div style={{ display: "flex", gap: 8 }}>
               <Link to="/properties" className="btn btn-outline btn-small">
-                Properties
+                {t('properties')}
               </Link>
               <Link
                 to={currentGame ? `/game/${currentGame.id}` : "/app"}
                 className="btn btn-primary btn-small"
               >
-                ← Back
+                ← {t('cancel')}
               </Link>
             </div>
           </div>
@@ -266,12 +275,12 @@ export default function TradePage() {
           {/* ===== CREATE TRADE FORM ===== */}
           <div className="game-card" style={{ marginTop: 20 }}>
             <div className="game-card-header">
-              <strong>Create Trade Offer</strong>
+              <strong>{t('trade_create')}</strong>
             </div>
             <div className="game-card-body">
               {/* Target player */}
               <div className="form-group">
-                <label>Trade with</label>
+                <label>{t('recipient_player')}</label>
                 <select
                   className="form-input"
                   value={toPlayer}
@@ -280,7 +289,7 @@ export default function TradePage() {
                     setRequestedProperties([]);
                   }}
                 >
-                  <option value="">Select player…</option>
+                  <option value="">{t('select_player')}</option>
                   {players
                     .filter((p) => p.user_id !== user.id)
                     .map((p) => (
@@ -294,7 +303,7 @@ export default function TradePage() {
               {/* Money */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div className="form-group">
-                  <label>You offer ($)</label>
+                  <label>{t('trade_my_offer')} ($)</label>
                   <input
                     className="form-input"
                     type="number"
@@ -304,7 +313,7 @@ export default function TradePage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>You request ($)</label>
+                  <label>{t('trade_their_offer')} ($)</label>
                   <input
                     className="form-input"
                     type="number"
@@ -317,10 +326,10 @@ export default function TradePage() {
 
               {/* Offered properties */}
               <div className="form-group">
-                <label>Your properties to offer</label>
+                <label>{t('my_properties')}</label>
                 {myProperties.length === 0 && (
                   <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-                    You don't own any properties.
+                    {t('no_properties_owned')}
                   </p>
                 )}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
@@ -348,11 +357,11 @@ export default function TradePage() {
               {toPlayer && (
                 <div className="form-group">
                   <label>
-                    Properties to request from {playerName(toPlayer, players)}
+                    {t('properties')} ({playerName(toPlayer, players)})
                   </label>
                   {theirProperties.length === 0 && (
                     <p style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>
-                      This player doesn't own any properties.
+                      {t('no_properties_owned')}
                     </p>
                   )}
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
@@ -386,16 +395,16 @@ export default function TradePage() {
                 disabled={busy || !toPlayer}
                 onClick={submitTrade}
               >
-                {busy ? "Sending…" : "Send Trade Offer"}
+                {busy ? t('processing') : t('send')}
               </button>
             </div>
           </div>
 
           {/* ===== TRADE INBOX ===== */}
           <div style={{ marginTop: 32 }}>
-            <h3>Trade Inbox</h3>
+            <h3>{t('trades')}</h3>
             {trades.length === 0 && (
-              <p style={{ color: "var(--text-secondary)" }}>No trades yet.</p>
+              <p style={{ color: "var(--text-secondary)" }}>{t('no_transactions')}</p>
             )}
             <div className="games-list">
               {trades.map((trade) => {
@@ -436,7 +445,7 @@ export default function TradePage() {
                       <div className="trade-summary-grid">
                         <div className="trade-side">
                           <div className="trade-side-label">
-                            {fromName} offers:
+                            {fromName} {t('trade_offers_label')}
                           </div>
                           {trade.offered_money > 0 && (
                             <div className="trade-money">💰 ${trade.offered_money.toLocaleString()}</div>
@@ -449,7 +458,7 @@ export default function TradePage() {
                         <div className="trade-arrow">⇄</div>
                         <div className="trade-side">
                           <div className="trade-side-label">
-                            {toName} offers:
+                            {toName} {t('trade_offers_label')}
                           </div>
                           {trade.requested_money > 0 && (
                             <div className="trade-money">💰 ${trade.requested_money.toLocaleString()}</div>
@@ -487,7 +496,7 @@ export default function TradePage() {
                               disabled={busy}
                               onClick={() => handleAccept(trade)}
                             >
-                              Accept
+                              {t('confirm')}
                             </button>
                           )}
                           <button
@@ -495,7 +504,7 @@ export default function TradePage() {
                             disabled={busy}
                             onClick={() => handleReject(trade)}
                           >
-                            {isOutgoing && !isIncoming ? "Cancel" : "Reject"}
+                            {isOutgoing && !isIncoming ? t('trade_cancel') : t('reject') || 'Reject'}
                           </button>
                         </div>
                       )}
