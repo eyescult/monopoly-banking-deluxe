@@ -74,7 +74,7 @@ function BuildingWarn({ show, groupName }: { show: boolean; groupName: string | 
   if (!show) return null;
   return (
     <div className="trade-building-warn">
-      ⚠️ {t('trade_building_warn', { group: groupName })}
+      ⚠️ {t('trade_building_warn', { group: groupName ? t('group_' + groupName.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: groupName }) : '' })}
     </div>
   );
 }

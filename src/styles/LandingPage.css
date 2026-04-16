@@ -465,4 +465,22 @@
         flex-direction: column;
         padding: 0 2rem;
     }
+
+    /* Mobile specific fixes */
+    .lp-container {
+        padding: 0 1rem;
+    }
+
+    .lp-btn-primary.nav-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+    }
+
+    .lp-lang-switcher span.lp-lang-text {
+        display: none;
+    }
+
+    .lp-logo-img {
+        height: 28px;
+    }
 }

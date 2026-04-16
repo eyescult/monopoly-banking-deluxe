@@ -20,7 +20,8 @@ export default function CreateGameModal({ onClose }) {
     const [settings, setSettings] = useState({
         startingCapital: 15000000,
         salary: 2000000,
-        enableFreeParking: false
+        enableFreeParking: false,
+        timeLimit: 0
     });
     const [loading, setLoading] = useState(false);
 
@@ -80,6 +81,23 @@ export default function CreateGameModal({ onClose }) {
                             step="100000"
                             required
                         />
+                    </div>
+
+                    {/* Zaman Sınırı Ayarı */}
+                    <div className="form-group">
+                        <label className="form-label">{t('time_limit')}</label>
+                        <select
+                            className="form-input"
+                            value={settings.timeLimit}
+                            onChange={(e) => setSettings({ ...settings, timeLimit: parseInt(e.target.value) })}
+                        >
+                            <option value={0}>{t('time_limit_unlimited')}</option>
+                            <option value={30}>{t('time_limit_mins', { amount: 30 })}</option>
+                            <option value={45}>{t('time_limit_mins', { amount: 45 })}</option>
+                            <option value={60}>{t('time_limit_mins', { amount: 60 })}</option>
+                            <option value={90}>{t('time_limit_mins', { amount: 90 })}</option>
+                            <option value={120}>{t('time_limit_mins', { amount: 120 })}</option>
+                        </select>
                     </div>
 
                     {/* Otopark Kuralı Ayarı */}

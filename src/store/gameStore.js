@@ -74,7 +74,12 @@ export const useGameStore = create((set, get) => ({
                     enable_free_parking: settings.enableFreeParking,
                     free_parking_money: 0,
                     players: [],
-                    transaction_history: [],
+                    transaction_history: settings.timeLimit > 0 ? [{
+                        id: Math.random().toString(36).substring(7),
+                        type: 'game_config',
+                        time_limit_minutes: settings.timeLimit,
+                        timestamp: new Date().toISOString()
+                    }] : [],
                     starting_timestamp: null,
                     winner_id: null
                 })
@@ -332,7 +337,7 @@ export const useGameStore = create((set, get) => ({
     /**
      * Oyunu tamamlandı olarak işaretler.
      */
-    endGame: async (gameId) => {
+    endGame: async (gameId, calculatedWinnerId = null) => {
         try {
             const currentGame = get().currentGame;
             const activeGameId = gameId || currentGame?.id;
@@ -342,10 +347,12 @@ export const useGameStore = create((set, get) => ({
 
             const players = currentGame?.players || [];
             const activePlayers = players.filter(player => !player.bankrupt_timestamp);
-            const winnerId =
+            
+            const winnerId = calculatedWinnerId || (
                 activePlayers.length === 1
                     ? activePlayers[0].user_id
-                    : currentGame?.winner_id || players[0]?.user_id || null;
+                    : currentGame?.winner_id || players[0]?.user_id || null
+            );
 
             const { error } = await supabase
                 .from('games')

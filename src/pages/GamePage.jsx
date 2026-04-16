@@ -9,6 +9,7 @@ import {
     LogOut, History, ShieldAlert, CircleAlert, Globe, Home, ShoppingCart
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { estimatePropertyWorth } from '../services/rentEngine';
 
 
 import TransactionModal from '../components/TransactionModal';
@@ -26,6 +27,7 @@ export default function GamePage() {
     const subscribeToGame = useGameStore(state => state.subscribeToGame);
     const leaveGame = useGameStore(state => state.leaveGame);
     const endGame = useGameStore(state => state.endGame);
+    const startGame = useGameStore(state => state.startGame);
     const bankruptPlayer = useGameStore(state => state.bankruptPlayer);
     const refreshGameData = useGameStore(state => state.refreshGameData);
 
@@ -42,6 +44,7 @@ export default function GamePage() {
     const [showGameEndModal, setShowGameEndModal] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
     const [confirmEndGame, setConfirmEndGame] = useState(false);
+    const [timeLeftMs, setTimeLeftMs] = useState(null);
 
     // Sidebar referansı (dışarı tıklandığında kapanması için)
     const sidebarRef = useRef(null);
@@ -104,6 +107,71 @@ export default function GamePage() {
         }
     }, [game?.status, game?.winner_id]);
 
+    const timeLimitConfig = game?.transaction_history?.find(tx => tx.type === 'game_config');
+    const timeLimitMinutes = timeLimitConfig ? timeLimitConfig.time_limit_minutes : 0;
+    const isHost = game?.players?.length > 0 && game.players[0].user_id === user?.id;
+
+    useEffect(() => {
+        if (!game?.starting_timestamp || timeLimitMinutes <= 0 || game?.status === 'completed' || game?.winner_id) {
+            setTimeLeftMs(null);
+            return;
+        }
+
+        const endTime = new Date(game.starting_timestamp).getTime() + timeLimitMinutes * 60000;
+
+        const interval = setInterval(() => {
+            const now = new Date().getTime();
+            const diff = endTime - now;
+            
+            if (diff <= 0) {
+                setTimeLeftMs(0);
+                clearInterval(interval);
+                if (isHost && !game.winner_id) {
+                    calculateNetWorthAndEndGame();
+                }
+            } else {
+                setTimeLeftMs(diff);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [game?.starting_timestamp, timeLimitMinutes, game?.winner_id, isHost]);
+
+    const calculateNetWorthAndEndGame = async () => {
+        toast(t('time_up') || 'Süre doldu! Sonuçlar hesaplanıyor...', { icon: '⏳' });
+        
+        let highestNetWorth = -1;
+        let winnerId = null;
+
+        game.players.forEach(p => {
+            if (p.bankrupt_timestamp) return;
+            
+            let nw = p.balance;
+            const myProps = properties.filter(prop => prop.owner_id === p.user_id);
+            myProps.forEach(prop => {
+                nw += estimatePropertyWorth(prop);
+            });
+
+            if (nw > highestNetWorth) {
+                highestNetWorth = nw;
+                winnerId = p.user_id;
+            }
+        });
+
+        if (!winnerId) winnerId = game.players[0].user_id;
+
+        await endGame(game.id, winnerId);
+    };
+
+    const formatCountdown = (ms) => {
+        if (ms === null) return null;
+        if (ms <= 0) return "00:00";
+        const totalSeconds = Math.floor(ms / 1000);
+        const m = Math.floor(totalSeconds / 60);
+        const s = totalSeconds % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
     /**
      * Dışarı tıklama kontrolü (Sidebar için)
      */
@@ -159,8 +227,7 @@ export default function GamePage() {
     }
 
     const currentPlayer = game.players.find(p => p.user_id === user?.id);
-    const isHost = game.created_by === user?.id;
-    const transactions = game.transaction_history || [];
+    const transactions = (game.transaction_history || []).filter(tx => tx.type !== 'game_config');
     const freeParkingBalance = game.free_parking_money || 0;
 
 
@@ -197,9 +264,21 @@ export default function GamePage() {
         const result = await endGame(game.id);
         if (result.success) {
             setConfirmEndGame(false);
-            toast.success(t('game_ended'));
+            toast.success(t('game_ended') || 'Oyun bitirildi');
         } else {
             toast.error(t('end_game_error'));
+        }
+    };
+
+    /**
+     * Oyunu Başlat (Sadece kurucu)
+     */
+    const handleStartGame = async () => {
+        const result = await startGame(game.id);
+        if (result.success) {
+            toast.success(t('game_started') || 'Oyun Başladı!');
+        } else {
+            toast.error(result.error);
         }
     };
 
@@ -370,7 +449,22 @@ export default function GamePage() {
             {/* Sidebar End */}
 
 
-            {/* Üst Bar */}
+            {/* Ana İçerik */}
+                {/* Lobby Phase Warning / Start Button */}
+                {!game.starting_timestamp && (
+                    <div style={{ margin: '0 16px 16px 16px', padding: '16px', background: 'rgba(255, 215, 0, 0.1)', border: '1px solid rgba(255, 215, 0, 0.3)', borderRadius: '12px', textAlign: 'center' }}>
+                        {isHost ? (
+                            <div>
+                                <p style={{ marginBottom: '8px', color: '#FFD700', fontWeight: 'bold' }}>{t('lobby_host_wait')}</p>
+                                <button className="btn btn-primary" onClick={handleStartGame}>{t('lobby_start_game')}</button>
+                            </div>
+                        ) : (
+                            <p style={{ color: '#FFD700', fontWeight: 'bold' }}>{t('lobby_guest_wait')}</p>
+                        )}
+                    </div>
+                )}
+                
+                {/* Header (Bakiye Özeti ve Timer) */}
             <div className="game-header">
                 <div className="user-info">
                     <Avatar user={currentPlayer} size={40} />
@@ -388,11 +482,21 @@ export default function GamePage() {
             </div>
 
             {/* Bakiye Kartı */}
-            <div className="balance-section premium-glass-card fade-in" style={{ animation: 'float 6s ease-in-out infinite' }}>
-                <div className="section-header" style={{ justifyContent: 'center', marginBottom: '8px' }}>{t('current_balance')}</div>
-                <div className="main-balance">
-                    ${currentPlayer.balance.toLocaleString()}
+            <div className="balance-section premium-glass-card fade-in" style={{ animation: 'float 6s ease-in-out infinite', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <div className="section-header" style={{ marginBottom: '8px' }}>{t('current_balance')}</div>
+                    <div className="main-balance">
+                        ${currentPlayer.balance.toLocaleString()}
+                    </div>
                 </div>
+                {timeLeftMs !== null && (
+                    <div className="game-timer-card glassmorphic-dark" style={{ padding: '8px 16px', borderRadius: '12px', textAlign: 'center', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', marginBottom: '2px' }}>{t('time_remaining')}</div>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 'bold', fontFamily: 'monospace', color: timeLeftMs <= 60000 ? '#f44336' : '#fff' }}>
+                            ⏳ {formatCountdown(timeLeftMs)}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Owned Properties Scroll (Overview) */}
@@ -411,7 +515,7 @@ export default function GamePage() {
                     }}>
                         {myProperties.map(property => {
                             const bandColor = getGroupColor(property.group_name);
-                            const rentLabel = isUtility(property) ? 'Dice x' + (myProperties.filter(p => p.group_name === 'Mediacenters').length > 1 ? '10' : '4') + '*' : `$${calculateRent(property, properties).toLocaleString()}`;
+                            const rentLabel = isUtility(property) ? t('dice_multiplier', { multiplier: (myProperties.filter(p => p.group_name === 'Mediacenters').length > 1 ? '10' : '4') }) + '*' : `$${calculateRent(property, properties).toLocaleString()}`;
                             return (
                                 <div 
                                     key={property.id} 

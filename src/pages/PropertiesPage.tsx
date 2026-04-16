@@ -53,13 +53,16 @@ function BuildingIndicator({ houses, isHotel }: { houses: number; isHotel: boole
 
 /** Color band at the top of a property card. */
 function ColorBand({ groupName, type }: { groupName: string | null; type: string }) {
+  const { t } = useTranslation();
   if (type === "special") return null;
   const color = getGroupColor(groupName);
+  const safeGroupKey = groupName ? 'group_' + groupName.toLowerCase().replace(/[\s\/]+/g, '_') : '';
+  const safeTypeKey = 'type_' + type.toLowerCase().replace(/[\s\/]+/g, '_');
   return (
     <div
       className="property-color-band"
       style={{ backgroundColor: color }}
-      title={groupName ?? type}
+      title={groupName ? t(safeGroupKey, { defaultValue: groupName }) : t(safeTypeKey, { defaultValue: type })}
     />
   );
 }
@@ -94,7 +97,11 @@ function PropertyCard({
       <ColorBand groupName={property.group_name} type={property.type} />
       <div className="game-card-header">
         <strong>{property.name}</strong>
-        <span className="property-type-badge">{property.group_name ?? property.type}</span>
+        <span className="property-type-badge">
+            {property.group_name 
+                ? t('group_' + property.group_name.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: property.group_name }) 
+                : t('type_' + property.type.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: property.type })}
+        </span>
       </div>
 
       <div className="game-card-body">
@@ -133,7 +140,7 @@ function PropertyCard({
 
         {!ownsFull && isColorProperty && (
           <div className="property-hint">
-            {t("prop_build_hint", { group: property.group_name })}
+            {t("prop_build_hint", { group: property.group_name ? t('group_' + property.group_name.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: property.group_name }) : '' })}
           </div>
         )}
 
@@ -312,7 +319,11 @@ export default function PropertiesPage() {
                   className="group-heading"
                   style={{ borderLeft: `4px solid ${sampleColor}`, paddingLeft: 10, marginBottom: 10 }}
                 >
-                  <h3 style={{ margin: 0 }}>{groupKey}</h3>
+                  <h3 style={{ margin: 0 }}>
+                    {groupKey === 'utility' || groupKey === 'station' || groupKey === 'property' 
+                        ? t('type_' + groupKey.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: groupKey }) 
+                        : t('group_' + groupKey.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: groupKey })}
+                  </h3>
                 </div>
                 <div className="games-list">
                   {props.map((property) => (
@@ -358,7 +369,11 @@ export default function PropertiesPage() {
                       className="group-heading"
                       style={{ borderLeft: `4px solid ${sampleColor}`, paddingLeft: 10, marginBottom: 10 }}
                     >
-                      <h3 style={{ margin: 0 }}>{groupKey}</h3>
+                      <h3 style={{ margin: 0 }}>
+                        {groupKey === 'utility' || groupKey === 'station' || groupKey === 'property' 
+                            ? t('type_' + groupKey.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: groupKey }) 
+                            : t('group_' + groupKey.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: groupKey })}
+                      </h3>
                     </div>
                     <div>
                       {props.map((property) => {
@@ -416,7 +431,9 @@ export default function PropertiesPage() {
                                 }}
                               />
                               <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                                {property.group_name ?? property.type}
+                                {property.group_name 
+                                    ? t('group_' + property.group_name.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: property.group_name }) 
+                                    : t('type_' + property.type.toLowerCase().replace(/[\s\/]+/g, '_'), { defaultValue: property.type })}
                               </span>
 
                               {!isOwned && (

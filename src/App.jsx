@@ -137,6 +137,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/tr" element={<LandingPage />} />
         <Route path="/en" element={<LandingPage />} />
+        <Route path="/de" element={<LandingPage />} />
 
         <Route
           path="/login"
